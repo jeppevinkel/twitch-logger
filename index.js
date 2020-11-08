@@ -40,7 +40,7 @@ if (config.discord_integration.enabled) {
 
     function sendLog() {
         if (!messages.length) return;
-        let content = `${messages.join('\n')}\n`;
+        let content = messages.join('\n');
         let webhook = new discord.WebhookClient("774817906130944020", "WiN2UesxYFb4T1htrbR_fE6-8323Rre1WR8Wn1fSJLTL526TZXAyksb0z0JH07fqItoI");
 
         webhook.send(content).catch(console.error);
