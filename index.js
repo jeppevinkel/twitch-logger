@@ -22,9 +22,9 @@ client.on("connected", (address, port) => {
     if (config.discord_integration.enabled) {
         let url = config.discord_integration.webhook.split('/');
         discordWebhook = new discord.WebhookClient(url[url.length-2], url[url.length-1]);
-        if (config.discord_integration.enabled) setInterval(logLoopDiscord, config.discord_integration.log_interval);
-        if (config.local_files.enabled) setInterval(logLoopLocal, config.local_files.log_interval);
+        setInterval(logLoopDiscord, config.discord_integration.log_interval);
     }
+    if (config.local_files.enabled) setInterval(logLoopLocal, config.local_files.log_interval);
 });
 
 function logLoopDiscord() {

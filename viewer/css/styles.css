@@ -1,0 +1,15 @@
+label {
+    display: block;
+    font: 1rem 'Fira Sans', sans-serif;
+}
+
+input,
+label {
+    margin: .4rem 0;
+}
+
+#myData {
+    border: medium solid black;
+    padding: 1em;
+    font-size: large;
+}

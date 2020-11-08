@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Twitch Chat Log</title>
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+<form>
+    <label for="log">Choose a log file:</label>
+    <input type="file" id="log" name="log" onchange='onChooseFile(event, onFileLoad.bind(this))' accept="application/json">
+</form>
+
+<div id="myData"></div>
+
+<script>
+    function onFileLoad(event) {
+        let json = JSON.parse(event.target.result);
+        setData(json);
+    }
+
+    function onChooseFile(event, onLoadFileHandler) {
+        if (typeof window.FileReader !== 'function')
+            throw ("The file API isn't supported on this browser.");
+        let input = event.target;
+        if (!input)
+            throw ("The browser does not properly implement the event object");
+        if (!input.files)
+            throw ("This browser does not support the `files` property of the file input.");
+        if (!input.files[0])
+            return undefined;
+        let file = input.files[0];
+        let fr = new FileReader();
+        fr.onload = onLoadFileHandler;
+        fr.readAsText(file);
+    }
+
+    function setData(data) {
+        let mainContainer = document.getElementById("myData");
+        mainContainer.innerHTML = "";
+        for (var i = 0; i < data.length; i++) {
+            var div = document.createElement("div");
+            div.innerHTML = data[i].display_name + ': ';
+            let message = data[i].message_content;
+            if (data[i].emotes) {
+                let placements = [];
+                let offset = 0;
+                Object.keys(data[i].emotes).forEach(function (key) {
+                    data[i].emotes[key].forEach(function (placement) {
+                        placements.push([placement, key]);
+                    })
+                });
+                placements = placements.sort(function (a, b) {return parseInt(a[0].split("-")[0]) - parseInt(b[0].split("-")[0])});
+                placements.forEach(function (placement) {
+                    let limits = placement[0].split("-");
+                    let msgData = insertEmote(message, offset, parseInt(limits[0]), parseInt(limits[1]), getEmoticonUrl(placement[1]));
+                    message = msgData[0];
+                    offset += msgData[1];
+                })
+            }
+            div.innerHTML += message;
+            mainContainer.appendChild(div);
+        }
+    }
+
+    function httpGetAsync(theUrl, callback)
+    {
+        var xmlHttp = new XMLHttpRequest();
+        xmlHttp.onreadystatechange = function() {
+            if (xmlHttp.readyState === 4 && xmlHttp.status === 200)
+                callback(xmlHttp.responseText);
+        }
+        xmlHttp.open("GET", theUrl, true);
+        xmlHttp.send(null);
+    }
+
+    function getEmoticonUrl(id) {
+        return `https://static-cdn.jtvnw.net/emoticons/v1/${id}/1.0`;
+    }
+
+    function insertEmote(str, offset ,lower, upper, url) {
+        let len = str.length;
+        lower += offset;
+        upper += offset + 1;
+        let imgStr = "<img src=\"" + url + "\" alt=\"emoticon\" height='20'>";
+
+        str = str.substring(0, lower) + imgStr + str.substring(upper);
+        return [str, str.length - len];
+    }
+</script>
+</body>
+</html>
