@@ -1,0 +1,8 @@
+{
+  "twitch_channels": ["channelName"],
+  "discord_integration": {
+    "enabled": true,
+    "webhook": "",
+    "log_interval": 1000
+  }
+}
