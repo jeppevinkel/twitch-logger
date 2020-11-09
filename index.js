@@ -2,7 +2,8 @@ const tmi = require('tmi.js');
 const moment = require('moment/moment.js');
 const config = require('./config.json');
 const discord = require('discord.js');
-const fs = require('fs')
+const fs = require('fs');
+const https = require('https');
 
 const template = require('./tags_template.json');
 
@@ -54,7 +55,18 @@ if (config.local_files.enabled) {
             "message_content": message
         };
 
-        messages.push(msg)
+        if (config.local_files.cache_emotes) {
+            let imgPath = `${__dirname}/logs/cache/emotes`;
+            Object.keys(msg.emotes).forEach(function (key) {
+                let imgName = `/${key}.png`;
+
+                ensureExists(imgPath, {recursive: true}, function (err) {
+                    saveImageToDisk(getEmoticonUrl(key), imgPath + imgName);
+                });
+            })
+        }
+
+        messages.push(msg);
     });
 
     function sendLogLocal() {
@@ -70,25 +82,28 @@ if (config.local_files.enabled) {
             else {
                 fs.readFile(path + fileName, (err, data) => {
                     if (err) {
-                        console.error(err)
-                        return
-                    }
-                    let json = JSON.parse(data);
-                    json = json.concat(messages);
-                    fs.writeFile(path + fileName, JSON.stringify(json), (err) => {
-                        if (err) {
-                            console.error(err)
-                        }
+                        fs.writeFile(path + fileName, JSON.stringify(messages), (err) => {
+                            if (err) {
+                                console.error(err)
+                            }
 
-                        messages = [];
-                    })
+                            messages = [];
+                        })
+                    }
+                    else {
+                        let json = JSON.parse(data);
+                        json = json.concat(messages);
+                        fs.writeFile(path + fileName, JSON.stringify(json), (err) => {
+                            if (err) {
+                                console.error(err)
+                            }
+
+                            messages = [];
+                        })
+                    }
                 })
             }
         })
-    }
-
-    function getEmoticonUrl(id) {
-        return `https://static-cdn.jtvnw.net/emoticons/v1/${id}/1.0`;
     }
 }
 
@@ -123,5 +138,40 @@ function ensureExists(path, mask, cb) {
             if (err.code === 'EEXIST') cb(null);
             else cb(err);
         } else cb(null);
+    });
+}
+
+function getEmoticonUrl(id) {
+    return `https://static-cdn.jtvnw.net/emoticons/v1/${id}/1.0`;
+}
+
+function fetchImage(url, localPath, index) {
+    var extensions = ['jpg', 'png', 'jpeg', 'bmp'];
+
+    if (index === extensions.length) {
+        console.log('Fetching ' + url + ' failed.');
+        return;
+    }
+
+    var fullUrl = url + extensions[index];
+
+    request.get(fullUrl, function(response) {
+        if (response.statusCode === 200) {
+            fs.write(localPath, response.body, function() {
+                console.log('Successfully downloaded file ' + url);
+            });
+        }
+
+        else {
+            fetchImage(url, localPath, index + 1);
+        }
+    });
+}
+
+function saveImageToDisk(url, localPath) {
+    var fullUrl = url;
+    var file = fs.createWriteStream(localPath);
+    var request = https.get(url, function(response) {
+        response.pipe(file);
     });
 }
