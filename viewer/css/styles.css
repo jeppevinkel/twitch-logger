@@ -8,8 +8,224 @@ label {
     margin: .4rem 0;
 }
 
-#myData {
-    border: medium solid black;
-    padding: 1em;
-    font-size: large;
+#chat {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    top: 60px;
+    padding: .5em;
+}
+
+.chat-line {
+    -webkit-transition: all 1s ease-in;
+    -moz-transition: all 1s ease-in;
+    -ms-transition: all 1s ease-in;
+    -o-transition: all 1s ease-in;
+    transition: all 1s ease-in;
+}
+
+.chat-line[data-faded] {
+    opacity: .8;
+}
+
+.chat-line.chat-action {
+}
+
+.chat-line.chat-notice {
+    opacity: .7;
+    font-weight: 300;
+}
+
+.chat-line.chat-notice[data-level] {
+}
+
+.chat-line.chat-notice[data-level="-4"] {
+    color: hsla(250, 80%, 65%, 1);
+    font-style: italic;
+}
+
+.chat-line.chat-notice[data-level="-3"] {
+    color: hsla(200, 80%, 50%, 1);
+    font-style: italic;
+}
+
+.chat-line.chat-notice[data-level="-2"] {
+    color: hsla(160, 80%, 50%, 1);
+    font-style: italic;
+}
+
+.chat-line.chat-notice[data-level="-1"] {
+    color: hsla(100, 80%, 50%, 1);
+    font-style: italic;
+}
+
+.chat-line.chat-notice[data-level="1"] {
+    color: hsla(55, 100%, 50%, 1);
+}
+
+.chat-line.chat-notice[data-level="2"] {
+    color: hsla(30, 100%, 50%, 1);
+    font-weight: 400;
+}
+
+.chat-line.chat-notice[data-level="3"] {
+    color: hsla(0, 100%, 50%, 1);
+    font-weight: 400;
+}
+
+.chat-line.chat-notice[data-level="4"] {
+    color: hsla(0, 100%, 50%, 1);
+    font-weight: 700;
+}
+
+.chat-line.chat-notice[data-faded] {
+    opacity: .3;
+}
+
+.chat-line.chat-timedout {
+    opacity: .2;
+    font-size: .75em;
+    -webkit-transition: all 100ms ease-in;
+    -moz-transition: all 100ms ease-in;
+    -ms-transition: all 100ms ease-in;
+    -o-transition: all 100ms ease-in;
+    transition: all 100ms ease-in;
+}
+
+.chat-line.chat-cleared {
+    opacity: .2;
+    font-size: .33em;
+    -webkit-transition: all 100ms ease-in;
+    -moz-transition: all 100ms ease-in;
+    -ms-transition: all 100ms ease-in;
+    -o-transition: all 100ms ease-in;
+    transition: all 100ms ease-in;
+}
+
+.chat-channel {
+    margin-right: .375em;
+    opacity: .6;
+    font-weight: 300;
+}
+
+.chat-time {
+    font-weight: 400;
+    margin-right: .375em;
+}
+
+.chat-name {
+    font-weight: 700;
+}
+
+.chat-colon {
+    margin-right: .375em;
+    opacity: .85;
+}
+
+.chat-line:not(.chat-action) .chat-colon:after {
+    content: ':';
+}
+
+.chat-message {
+    font-weight: 400;
+}
+
+.chat-line:not(.chat-action) .chat-message {
+    color: inherit !important;
+}
+
+.emoticon {
+    background-position: center center;
+    background-repeat: no-repeat;
+    margin: -5px 0;
+    display: inline-block;
+    vertical-align: middle !important;
+    height: 1.5em;
+}
+
+.chat-badges {
+    margin-right: .125em;
+}
+.chat-badges > div {
+    margin-bottom: 1px;
+    border-radius: 2px;
+    height: 1em;
+    min-width: 1em;
+    display: inline-block;
+    vertical-align: middle;
+    background-size: contain;
+    background-repeat: no-repeat;
+    margin-right: .3em;
+}
+
+.chat-badge-mod {
+    background-color: hsl(105, 89%, 36%);
+    background-image: url(http://www.twitch.tv/images/xarth/badge_mod.svg);
+}
+.chat-badge-turbo {
+    background-color: hsl(261, 43%, 45%);
+    background-image: url(http://www.twitch.tv/images/xarth/badge_turbo.svg);
+}
+.chat-badge-broadcaster {
+    background-color: hsl(0, 81%, 50%);
+    background-image: url(http://www.twitch.tv/images/xarth/badge_broadcaster.svg);
+}
+.chat-badge-admin {
+    background-color: hsl(40, 96%, 54%);
+    background-image: url(http://www.twitch.tv/images/xarth/badge_admin.svg);
+}
+.chat-badge-staff {
+    background-color: hsl(268, 55%, 13%);
+    background-image: url(http://www.twitch.tv/images/xarth/badge_staff.svg);
+}
+.chat-badge-subscriber {
+}
+.chat-badge-bot {
+    background-image: url(https://cdn.betterttv.net/tags/bot.png);
+}
+
+
+[class*="chat-delete"] {
+}
+.chat-delete-timeout {
+}
+.chat-delete-clear {
+}
+
+[class*="chat-hosting"] {
+}
+.chat-hosting-yes {
+}
+.chat-hosting-no {
+}
+
+[class*="chat-connection"] {
+}
+[class*="chat-connection-good"] {
+}
+[class*="chat-connection-bad"] {
+}
+.chat-connection-good-connecting {
+}
+.chat-connection-good-logon {
+}
+.chat-connection-good-connected {
+}
+.chat-connection-good-reconnect {
+}
+.chat-connection-bad-fail {
+}
+.chat-connection-bad-disconnected {
+}
+
+[class*="chat-room"] {
+    font-size: .5em;
+}
+.chat-room-join {
+}
+.chat-room-part {
+}
+
+.chat-crash {
 }

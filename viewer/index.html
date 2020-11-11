@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <title>Twitch Chat Log</title>
     <link rel="stylesheet" href="css/styles.css">
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.24.0/moment.min.js"></script>
 </head>
 <body>
 <form>
@@ -11,7 +13,7 @@
     <input type="file" id="log" name="log" onchange='onChooseFile(event, onFileLoad.bind(this))' accept="application/json">
 </form>
 
-<div id="myData"></div>
+<div id="chat"></div>
 
 <script>
     function onFileLoad(event) {
@@ -36,11 +38,30 @@
     }
 
     function setData(data) {
-        let mainContainer = document.getElementById("myData");
+        let mainContainer = document.getElementById("chat");
         mainContainer.innerHTML = "";
-        for (var i = 0; i < data.length; i++) {
-            var div = document.createElement("div");
-            div.innerHTML = data[i].display_name + ': ';
+        for (let i = 0; i < data.length; i++) {
+            let chatLine = document.createElement("div"),
+                chatTime = document.createElement('span'),
+                chatName = document.createElement('span'),
+                chatColon = document.createElement('span'),
+                chatMessage = document.createElement('span');
+
+            chatLine.className = 'chat-line chat-action';
+            chatLine.dataset.username = data[i].display_name;
+
+            chatTime.className = 'chat-time';
+            chatTime.style.color = 'grey';
+            chatTime.innerHTML = `${moment(parseInt(data[i].sent_ts)).format('HH:mm')}`;
+
+            chatName.className = 'chat-name';
+            chatName.style.color = data[i].color;
+            chatName.innerHTML = data[i].display_name;
+
+            chatColon.className = 'chat-colon';
+
+            chatMessage.style.color = data[i].color;
+
             let message = data[i].message_content;
             if (data[i].emotes) {
                 let placements = [];
@@ -58,8 +79,14 @@
                     offset += msgData[1];
                 })
             }
-            div.innerHTML += message;
-            mainContainer.appendChild(div);
+            chatMessage.innerHTML += message;
+
+            chatLine.appendChild(chatTime);
+            chatLine.appendChild(chatName);
+            chatLine.appendChild(chatColon);
+            chatLine.appendChild(chatMessage);
+
+            mainContainer.appendChild(chatLine);
         }
     }
 
@@ -75,14 +102,14 @@
     }
 
     function getEmoticonUrl(id) {
-        return `https://static-cdn.jtvnw.net/emoticons/v1/${id}/1.0`;
+        return `https://static-cdn.jtvnw.net/emoticons/v1/${id}/3.0`;
     }
 
     function insertEmote(str, offset ,lower, upper, url) {
         let len = str.length;
         lower += offset;
         upper += offset + 1;
-        let imgStr = "<img src=\"" + url + "\" alt=\"emoticon\" height='20'>";
+        let imgStr = "<img class='emoticon' src=\"" + url + "\" alt=\"emoticon\">";
 
         str = str.substring(0, lower) + imgStr + str.substring(upper);
         return [str, str.length - len];

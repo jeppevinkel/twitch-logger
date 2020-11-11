@@ -10,6 +10,9 @@ const template = require('./tags_template.json');
 let discordWebhook;
 
 const client = new tmi.Client({
+    options: {
+        debug: true
+    },
     connection: {
         secure: true,
         reconnect: true
@@ -21,7 +24,7 @@ client.connect();
 
 
 client.on("connected", (address, port) => {
-    console.log(`Connected to: ${address}:${port} on the channels: [${config.twitch_channels.join()}]`);
+    console.log(`Connected to: ${address}:${port} on the channels: [${config.twitch_channels.join(', ')}]`);
     if (config.discord_integration.enabled) {
         let url = config.discord_integration.webhook.split('/');
         discordWebhook = new discord.WebhookClient(url[url.length-2], url[url.length-1]);
@@ -39,7 +42,7 @@ function logLoopLocal() {
 }
 
 if (config.local_files.enabled) {
-    let messages = [];
+    let logs = {};
 
     client.on('message', (channel, tags, message, self) => {
         let msg = {
@@ -68,44 +71,47 @@ if (config.local_files.enabled) {
             })
         }
 
-        messages.push(msg);
+        if (!logs[channel]) logs[channel] = [];
+        logs[channel].push(msg);
     });
 
     function sendLogLocal() {
-        if (!messages.length) return;
+        if (!Object.keys(logs).length) return;
 
         let path = `${__dirname}/logs/${moment().format("YYYY")}`;
-        let fileName = `/${moment().format("MM-DD")}_twitch.json`;
 
-        ensureExists(path, {recursive: true}, function (err) {
-            if (err) {
-                console.log(err);
-            }
-            else {
-                fs.readFile(path + fileName, (err, data) => {
-                    if (err) {
-                        fs.writeFile(path + fileName, JSON.stringify(messages), (err) => {
-                            if (err) {
-                                console.error(err)
-                            }
+        for (let channel in logs) {
+            if (!logs[channel].length) continue;
+            let fileName = `/${moment().format("YYYY-MM-DD")}_${channel}.json`;
 
-                            messages = [];
-                        })
-                    }
-                    else {
-                        let json = JSON.parse(data);
-                        json = json.concat(messages);
-                        fs.writeFile(path + fileName, JSON.stringify(json), (err) => {
-                            if (err) {
-                                console.error(err)
-                            }
+            ensureExists(path, {recursive: true}, function (err) {
+                if (err) {
+                    console.log(err);
+                } else {
+                    fs.readFile(path + fileName, (err, data) => {
+                        if (err) {
+                            fs.writeFile(path + fileName, JSON.stringify(logs[channel]), (err) => {
+                                if (err) {
+                                    console.error(err)
+                                }
 
-                            messages = [];
-                        })
-                    }
-                })
-            }
-        })
+                                logs[channel] = [];
+                            })
+                        } else {
+                            let json = JSON.parse(data);
+                            json = json.concat(logs[channel]);
+                            fs.writeFile(path + fileName, JSON.stringify(json), (err) => {
+                                if (err) {
+                                    console.error(err)
+                                }
+
+                                logs[channel] = [];
+                            });
+                        }
+                    });
+                }
+            });
+        }
     }
 }
 
