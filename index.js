@@ -19,7 +19,9 @@ const client = new tmi.Client({
 
 client.connect();
 
+
 client.on("connected", (address, port) => {
+    console.log(`Connected to: ${address}:${port} on the channels: [${config.twitch_channels.join()}]`);
     if (config.discord_integration.enabled) {
         let url = config.discord_integration.webhook.split('/');
         discordWebhook = new discord.WebhookClient(url[url.length-2], url[url.length-1]);
@@ -55,7 +57,7 @@ if (config.local_files.enabled) {
             "message_content": message
         };
 
-        if (config.local_files.cache_emotes) {
+        if (config.local_files.cache_emotes && msg.emotes != null) {
             let imgPath = `${__dirname}/logs/cache/emotes`;
             Object.keys(msg.emotes).forEach(function (key) {
                 let imgName = `/${key}.png`;
