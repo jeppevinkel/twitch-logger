@@ -116,8 +116,7 @@ if (config.discord_integration.enabled) {
     client.on('message', (channel, tags, message, self) => {
         let dt = moment(parseInt(tags['tmi-sent-ts']));
         let str = `[${dt.format('HH:mm')}] ${config.discord_integration.subscriber_badge.enabled ? (tags['subscriber'] ? `[${config.discord_integration.subscriber_badge.emoji}]`:'') : ''}${tags['mod'] ? '[🛡️]':''}${tags['badges'] != null ? tags['badges']['broadcaster'] ? '**[📣]':'' : ''} ${tags['display-name']}${tags['badges'] != null ? tags['badges']['broadcaster'] ? '**':'' : ''}: ${message}`;
-        messages.push(str)
-        console.log(str);
+        messages.push(str);
     });
 
     function sendLogDiscord() {
