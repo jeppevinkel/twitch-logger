@@ -1,13 +1,9 @@
 const tmi = require('tmi.js');
 const moment = require('moment/moment.js');
 const config = require('./config.json');
-const discord = require('discord.js');
 const fs = require('fs');
 const https = require('https');
-
-const template = require('./tags_template.json');
-
-let discordWebhook;
+const fetch = require('node-fetch');
 
 const client = new tmi.Client({
     options: {
@@ -26,8 +22,6 @@ client.connect();
 client.on("connected", (address, port) => {
     console.log(`Connected to: ${address}:${port} on the channels: [${config.twitch_channels.join(', ')}]`);
     if (config.discord_integration.enabled) {
-        let url = config.discord_integration.webhook.split('/');
-        discordWebhook = new discord.WebhookClient(url[url.length-2], url[url.length-1]);
         setInterval(logLoopDiscord, config.discord_integration.log_interval);
     }
     if (config.local_files.enabled) setInterval(logLoopLocal, config.local_files.log_interval);
@@ -130,7 +124,13 @@ if (config.discord_integration.enabled) {
         if (!messages.length) return;
         let content = messages.join('\n');
 
-        discordWebhook.send(content).catch(console.error);
+        fetch(config.discord_integration.webhook, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({"content": content})
+        }).catch(r => console.log(r));
 
         messages = [];
     }
