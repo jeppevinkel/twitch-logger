@@ -1,7 +1,7 @@
 {
   "twitch_channels": ["channelName"],
   "discord_integration": {
-    "enabled": true,
+    "enabled": false,
     "webhook": "",
     "log_interval": 1000,
     "subscriber_badge": {
@@ -13,5 +13,9 @@
     "enabled": true,
     "cache_emotes": true,
     "log_interval": 5000
+  },
+  "open_vr_notification_pipe": {
+    "enabled": false,
+    "port": 8077
   }
 }

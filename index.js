@@ -4,6 +4,7 @@ const config = require('./config.json');
 const fs = require('fs');
 const https = require('https');
 const fetch = require('node-fetch');
+const WebSocket = require('ws');
 
 const client = new tmi.Client({
     options: {
@@ -33,6 +34,44 @@ function logLoopDiscord() {
 
 function logLoopLocal() {
     sendLogLocal();
+}
+
+if (config.open_vr_notification_pipe.enabled) {
+    let websocket;
+    let active = false;
+
+    connectLoop();
+
+    function connectLoop()
+    {
+        if(!active) {
+            active = true;
+            if(typeof websocket !== 'undefined') websocket.close();
+            websocket = new WebSocket(`ws://localhost:${config.open_vr_notification_pipe.port}`);
+            websocket.onopen = function(evt) { onOpen(evt) };
+            websocket.onclose = function(evt) { onClose(evt) };
+            websocket.onerror = function(evt) { onError(evt) };
+        }
+        setTimeout(connectLoop, 5000);
+    }
+
+    function onOpen(evt)
+    {
+        active = true;
+    }
+
+    function onClose(evt)
+    {
+        active = false;
+    }
+
+    function onError(evt) {
+        console.log("ERROR: "+JSON.stringify(evt, null, 2));
+    }
+
+    client.on('message', (channel, tags, message, self) => {
+        websocket.send(JSON.stringify({title: "Twitch-Logger", message: `${tags['display-name']}: ${message}`}));
+    });
 }
 
 if (config.local_files.enabled) {
