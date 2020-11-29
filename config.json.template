@@ -16,6 +16,7 @@
   },
   "open_vr_notification_pipe": {
     "enabled": false,
+    "host": "ws://localhost",
     "port": 8077
   }
 }
