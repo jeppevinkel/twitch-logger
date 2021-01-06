@@ -193,3 +193,4 @@ fabric.properties
 .idea/caches/build_file_checksums.ser
 
 tags_template.json
+/.idea/discord.xml

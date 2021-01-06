@@ -41,12 +41,13 @@ if (config.open_vr_notification_pipe.enabled) {
     let websocket;
     let active = false;
 
+    let clearCacheInterval;
+
     connectLoop();
 
     function connectLoop()
     {
         if(!active) {
-            active = true;
             if(typeof websocket !== 'undefined') websocket.close();
             websocket = new WebSocket(`${config.open_vr_notification_pipe.host}:${config.open_vr_notification_pipe.port}`);
             websocket.onopen = function(evt) { onOpen(evt) };
@@ -59,11 +60,16 @@ if (config.open_vr_notification_pipe.enabled) {
     function onOpen(evt)
     {
         active = true;
+        console.log("Started clearCacheInterval");
+        clearCacheInterval = setInterval(clearAvatarCache, 60 * 60 * 1000);
     }
 
     function onClose(evt)
     {
         active = false;
+        console.log("Stopped clearCacheInterval");
+        clearInterval(clearCacheInterval);
+        clearAvatarCache();
     }
 
     function onError(evt) {
@@ -71,7 +77,6 @@ if (config.open_vr_notification_pipe.enabled) {
     }
 
     client.on('message', (channel, tags, message, self) => {
-        // getBinary('twitch_logo.png').then((data) => {
         generateAvatarImage(tags['display-name'], tags['color'], tags['username']).then((data) => {
             websocket.send(JSON.stringify({ title: "Twitch-Logger", message: `${tags['display-name']}: ${message}`, image: data }));
         }).catch(() => {
@@ -302,7 +307,8 @@ const avatarCache = {};
 
 async function generateAvatarImage(name, color, user) {
     if (avatarCache.hasOwnProperty(user)) {
-        return avatarCache[user];
+        avatarCache[user].lastUsed = Date.now();
+        return avatarCache[user].data;
     } else {
         // Background
         ctx.fillStyle = color;
@@ -321,7 +327,28 @@ async function generateAvatarImage(name, color, user) {
 
         // Cache and export
         let data = canvas.toDataURL().split(',')[1];
-        avatarCache[user] = data;
+
+        if (Object.keys(avatarCache).length >= 500) {
+            let oldestCache;
+            let oldestCacheAge;
+            for (let avatar in avatarCache) {
+                if (oldestCache == null || oldestCacheAge == null || avatarCache[avatar].lastUsed < avatarCache[avatar]) {
+                    oldestCache = avatar;
+                    oldestCacheAge = avatarCache[avatar].lastUsed;
+                }
+            }
+            delete avatarCache[oldestCache];
+        }
+
+        avatarCache[user] = {data: data, lastUsed: Date.now()};
         return data;
+    }
+}
+
+function clearAvatarCache() {
+    for (let avatar in avatarCache) {
+        if ((Date.now() - avatarCache[avatar].lastUsed) < 60 * 60 * 1000) {
+            delete avatarCache[avatar];
+        }
     }
 }
