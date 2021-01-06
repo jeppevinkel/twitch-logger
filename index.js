@@ -5,6 +5,7 @@ const fs = require('fs');
 const https = require('https');
 const fetch = require('node-fetch');
 const WebSocket = require('ws');
+const { createCanvas } = require('canvas')
 
 const client = new tmi.Client({
     options: {
@@ -70,8 +71,9 @@ if (config.open_vr_notification_pipe.enabled) {
     }
 
     client.on('message', (channel, tags, message, self) => {
-        getBinary('twitch_logo.png').then((data) => {
-            websocket.send(JSON.stringify({title: "Twitch-Logger", message: `${tags['display-name']}: ${message}`, image: data}));
+        // getBinary('twitch_logo.png').then((data) => {
+        generateAvatarImage(tags['display-name'], tags['color'], tags['username']).then((data) => {
+            websocket.send(JSON.stringify({ title: "Twitch-Logger", message: `${tags['display-name']}: ${message}`, image: data }));
         }).catch(() => {
             websocket.send(JSON.stringify({title: "Twitch-Logger", message: `${tags['display-name']}: ${message}`}));
         });
@@ -291,5 +293,35 @@ const getBinary = async (params = undefined) => {
         }
     } finally {
         return (result.trim() === '') ? undefined : result.trim();
+    }
+}
+
+const canvas = createCanvas(256, 256);
+const ctx = canvas.getContext('2d');
+const avatarCache = {};
+
+async function generateAvatarImage(name, color, user) {
+    if (avatarCache.hasOwnProperty(user)) {
+        return avatarCache[user];
+    } else {
+        // Background
+        ctx.fillStyle = color;
+        ctx.fillRect(0, 0, 256, 256);
+
+        // Text
+        let text = name.substr(0, 2);
+        ctx.textBaseline = "middle";
+        ctx.textAlign = "center";
+        ctx.font = '128px Sans-serif';
+        ctx.strokeStyle = 'black';
+        ctx.lineWidth = 8;
+        ctx.strokeText(text, 128, 128);
+        ctx.fillStyle = 'white';
+        ctx.fillText(text, 128, 128);
+
+        // Cache and export
+        let data = canvas.toDataURL().split(',')[1];
+        avatarCache[user] = data;
+        return data;
     }
 }

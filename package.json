@@ -12,7 +12,8 @@
   "dependencies": {
     "moment": "^2.29.1",
     "node-fetch": "^2.6.1",
-    "tmi.js": "^1.5.0"
+    "tmi.js": "^1.5.0",
+    "canvas": "^2.6.1"
   },
   "engines": {
     "node": ">=11.0"
