@@ -76,7 +76,7 @@ const run = async () => {
         });
     }
     else {
-        chat = new TwitchJs.Chat();
+        chat = new TwitchJs.Chat({});
     }
 
     // Initialize loops upon connecting
@@ -105,20 +105,32 @@ const run = async () => {
 
     Promise.all(config.twitch_channels.map(channel => chat.join(channel))).then(channelStates => {
         chat.on('PRIVMSG', message => {
-            if (config.open_vr_notification_pipe.enabled) {
-                generateAvatarImage(message.tags.displayName, message.tags.color, message.username).then((data) => {
-                    websocket.send(JSON.stringify({ title: "Twitch-Logger", message: `${message.tags.displayName}: ${message.message}`, image: data }));
-                }).catch(() => {
-                    websocket.send(JSON.stringify({title: "Twitch-Logger", message: `${message.tags.displayName}: ${message.message}`}));
-                });
-            }
+            if (config.open_vr_notification_pipe.enabled) pushToVR(message);
             if (config.discord_integration.enabled) pushToDiscord(message);
-            if (config.discord_integration.enabled) pushToLocal(message);
+            if (config.local_files.enabled) pushToLocal(message);
         });
     });
 };
 
-run();
+run().catch(e => {
+    console.log(e);
+});
+
+function pushToVR(message) {
+    var skip = false;
+    if (config.open_vr_notification_pipe.muteBroadcaster && message.tags.badges.hasOwnProperty('broadcaster')) skip = true;
+    config.open_vr_notification_pipe.ignoreUsers.forEach(function (user) { if (message.tags.username.toLowerCase() == user.toLowerCase()) skip = true; });
+    config.open_vr_notification_pipe.ignorePrefixes.forEach(function (prefix) { if (message.message.indexOf(prefix) == 0) skip = true; });
+    if (skip) {
+        console.log(`Skipped message from: ${message.tags.displayName}`);
+    } else {
+        generateAvatarImage(message.tags.displayName, message.tags.color, message.username).then((data) => {
+            websocket.send(JSON.stringify({ title: "Twitch-Logger", message: `${message.tags.displayName}: ${message.message}`, image: data }));
+        }).catch(() => {
+            websocket.send(JSON.stringify({ title: "Twitch-Logger", message: `${message.tags.displayName}: ${message.message}` }));
+        });
+    }
+}
 
 function logLoopDiscord() {
     sendLogDiscord();
