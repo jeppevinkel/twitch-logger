@@ -1,44 +1,23 @@
-const tmi = require('tmi.js');
+const TwitchJs = require('twitch-js');
 const moment = require('moment/moment.js');
 const config = require('./config.json');
 const fs = require('fs');
 const https = require('https');
 const fetch = require('node-fetch');
 const WebSocket = require('ws');
-const { createCanvas } = require('canvas')
+const { createCanvas } = require('canvas');
 
-const client = new tmi.Client({
-    options: {
-        debug: true
-    },
-    connection: {
-        secure: true,
-        reconnect: true
-    },
-    channels: config.twitch_channels
-});
-
-client.connect();
+let websocket;
+let discordMessages = [];
+let logs = {};
 
 
-client.on("connected", (address, port) => {
-    console.log(`Connected to: ${address}:${port} on the channels: [${config.twitch_channels.join(', ')}]`);
-    if (config.discord_integration.enabled) {
-        setInterval(logLoopDiscord, config.discord_integration.log_interval);
-    }
-    if (config.local_files.enabled) setInterval(logLoopLocal, config.local_files.log_interval);
-});
-
-function logLoopDiscord() {
-    sendLogDiscord();
-}
-
-function logLoopLocal() {
-    sendLogLocal();
-}
+// Loop variables
+let discordLogInterval;
+let localLogInterval
+let clearCacheInterval;
 
 if (config.open_vr_notification_pipe.enabled) {
-    let websocket;
     let active = false;
 
     connectLoop();
@@ -46,7 +25,6 @@ if (config.open_vr_notification_pipe.enabled) {
     function connectLoop()
     {
         if(!active) {
-            active = true;
             if(typeof websocket !== 'undefined') websocket.close();
             websocket = new WebSocket(`${config.open_vr_notification_pipe.host}:${config.open_vr_notification_pipe.port}`);
             websocket.onopen = function(evt) { onOpen(evt) };
@@ -59,242 +37,189 @@ if (config.open_vr_notification_pipe.enabled) {
     function onOpen(evt)
     {
         active = true;
+        console.log("Started clearCacheInterval");
+        clearCacheInterval = setInterval(clearAvatarCache, 60 * 60 * 1000);
     }
 
     function onClose(evt)
     {
         active = false;
+        console.log("Stopped clearCacheInterval");
+        clearInterval(clearCacheInterval);
+        clearAvatarCache();
     }
 
     function onError(evt) {
         console.log("ERROR: "+JSON.stringify(evt, null, 2));
     }
+}
 
-    client.on('message', (channel, tags, message, self) => {
-        // getBinary('twitch_logo.png').then((data) => {
-        generateAvatarImage(tags['display-name'], tags['color'], tags['username']).then((data) => {
-            websocket.send(JSON.stringify({ title: "Twitch-Logger", message: `${tags['display-name']}: ${message}`, image: data }));
-        }).catch(() => {
-            websocket.send(JSON.stringify({title: "Twitch-Logger", message: `${tags['display-name']}: ${message}`}));
+const onAuthenticationFailure = () =>
+    fetch('https://id.twitch.tv/oauth2/token', {
+        method: 'post',
+        body: JSON.stringify({
+            grant_type: 'refresh_token',
+            refresh_token: config.twitch_authentication.refresh_token,
+            client_id: config.twitch_authentication.client_id,
+            client_secret: config.twitch_authentication.client_secret,
+        }),
+        headers: {'Content-Type': 'application/json'}
+    }).then((response) => response.json()).then(json => json.access_token);
+
+const run = async () => {
+    var chat;
+    if (config.twitch_authentication.enabled) {
+        chat = new TwitchJs.Chat({
+            token: config.twitch_authentication.access_token,
+            username: config.twitch_authentication.username,
+            onAuthenticationFailure: onAuthenticationFailure
+        });
+    }
+    else {
+        chat = new TwitchJs.Chat();
+    }
+
+    // Initialize loops upon connecting
+    chat.on(TwitchJs.Chat.Events.CONNECTED, event => {
+        console.log("################  CONNECTED TO TWITCH  ################");
+        if (config.discord_integration.enabled) {
+            discordLogInterval = setInterval(logLoopDiscord, config.discord_integration.log_interval);
+        }
+        if (config.local_files.enabled) {
+            localLogInterval = setInterval(logLoopLocal, config.local_files.log_interval);
+        }
+    });
+
+    // Stop loops when disconnecting
+    chat.on(TwitchJs.Chat.Events.DISCONNECTED, event => {
+        console.log("################  DISCONNECTED FROM TWITCH  ################");
+        if (config.discord_integration.enabled) {
+            clearInterval(discordLogInterval);
+        }
+        if (config.local_files.enabled) {
+            clearInterval(localLogInterval);
+        }
+    });
+
+    await chat.connect();
+
+    Promise.all(config.twitch_channels.map(channel => chat.join(channel))).then(channelStates => {
+        chat.on('PRIVMSG', message => {
+            if (config.open_vr_notification_pipe.enabled) {
+                generateAvatarImage(message.tags.displayName, message.tags.color, message.username).then((data) => {
+                    websocket.send(JSON.stringify({ title: "Twitch-Logger", message: `${message.tags.displayName}: ${message.message}`, image: data }));
+                }).catch(() => {
+                    websocket.send(JSON.stringify({title: "Twitch-Logger", message: `${message.tags.displayName}: ${message.message}`}));
+                });
+            }
+            if (config.discord_integration.enabled) pushToDiscord(message);
+            if (config.discord_integration.enabled) pushToLocal(message);
         });
     });
+};
+
+run();
+
+function logLoopDiscord() {
+    sendLogDiscord();
 }
 
-if (config.local_files.enabled) {
-    let logs = {};
+function pushToDiscord(message) {
+    let dt = moment(parseInt(message.tags['tmiSentTs']));
+    let str = `[${message.channel}][${dt.format('HH:mm')}] ${config.discord_integration.subscriber_badge.enabled ? (message.tags['subscriber'] ? `[${config.discord_integration.subscriber_badge.emoji}]`:'') : ''}${message.tags['mod'] ? '[🛡️]':''}${message.tags['badges'] != null ? message.tags['badges']['broadcaster'] ? '**[📣]':'' : ''} ${message.tags['displayName']}${message.tags['badges'] != null ? message.tags['badges']['broadcaster'] ? '**':'' : ''}: ${message.message}`;
+    discordMessages.push(str);
+}
 
-    client.on('message', (channel, tags, message, self) => {
-        let msg = {
-            "badges": tags.badges,
-            "color": tags.color,
-            "display_name": tags['display-name'],
-            "emotes": tags.emotes,
-            "flags": tags.flags,
-            "mod": tags.mod,
-            "subscriber": tags.subscriber,
-            "sent_ts": tags['tmi-sent-ts'],
-            "user_type": tags['user-type'],
-            "username": tags.username,
-            "message_type": tags['message-type'],
-            "message_content": message
-        };
+function sendLogDiscord() {
+    if (!discordMessages.length) return;
+    let content = discordMessages.join('\n');
 
-        if (config.local_files.cache_emotes && msg.emotes != null) {
-            let imgPath = `${__dirname}/logs/cache/emotes`;
-            Object.keys(msg.emotes).forEach(function (key) {
-                let imgName = `/${key}.png`;
+    fetch(config.discord_integration.webhook, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({"content": content})
+    }).catch(r => console.log(r));
 
-                ensureExists(imgPath, {recursive: true}, function (err) {
-                    saveImageToDisk(getEmoticonUrl(key), imgPath + imgName);
-                });
-            })
-        }
+    discordMessages = [];
+}
 
-        if (!logs[channel]) logs[channel] = [];
-        logs[channel].push(msg);
-    });
 
-    function sendLogLocal() {
-        if (!Object.keys(logs).length) return;
+function logLoopLocal() {
+    sendLogLocal();
+}
 
-        let path = `${__dirname}/logs/${moment().format("YYYY")}`;
+function pushToLocal(message) {
+    let msg = {
+        "badges": message.tags.badges,
+        "color": message.tags.color,
+        "displayName": message.tags.displayName,
+        "emotes": message.tags.emotes,
+        "flags": message.tags.flags,
+        "mod": (message.tags.mod === "1"),
+        "subscriber": message.tags.subscriber === "1",
+        "tmiSentTs": message.tags.tmiSentTs,
+        "userType": message.tags.userType,
+        "username": message.username,
+        "event": message.event,
+        "messageContent": message.message
+    };
 
-        for (let channel in logs) {
-            if (!logs[channel].length) continue;
-            let fileName = `/${moment().format("YYYY-MM-DD")}_${channel}.json`;
+    if (config.local_files.cache_emotes && msg.emotes != null) {
+        let imgPath = `${__dirname}/logs/cache/emotes`;
+        for (const emotesKey in msg.emotes) {
+            let imgName = `/${msg.emotes[emotesKey].id}.png`;
 
-            ensureExists(path, {recursive: true}, function (err) {
-                if (err) {
-                    console.log(err);
-                } else {
-                    fs.readFile(path + fileName, (err, data) => {
-                        if (err) {
-                            fs.writeFile(path + fileName, JSON.stringify(logs[channel]), (err) => {
-                                if (err) {
-                                    console.error(err)
-                                }
-
-                                logs[channel] = [];
-                            })
-                        } else {
-                            let json = JSON.parse(data);
-                            json = json.concat(logs[channel]);
-                            fs.writeFile(path + fileName, JSON.stringify(json), (err) => {
-                                if (err) {
-                                    console.error(err)
-                                }
-
-                                logs[channel] = [];
-                            });
-                        }
-                    });
-                }
+            ensureExists(imgPath, {recursive: true}, function (err) {
+                saveImageToDisk(getEmoticonUrl(msg.emotes[emotesKey].id), imgPath + imgName);
             });
         }
     }
+
+    if (!logs[message.channel]) logs[message.channel] = [];
+    logs[message.channel].push(msg);
 }
 
-if (config.discord_integration.enabled) {
+function sendLogLocal() {
+    if (!Object.keys(logs).length) return;
 
-    let messages = [];
+    let path = `${__dirname}/logs/${moment().format("YYYY")}`;
 
-    client.on('message', (channel, tags, message, self) => {
-        let dt = moment(parseInt(tags['tmi-sent-ts']));
-        let str = `[${dt.format('HH:mm')}] ${config.discord_integration.subscriber_badge.enabled ? (tags['subscriber'] ? `[${config.discord_integration.subscriber_badge.emoji}]`:'') : ''}${tags['mod'] ? '[🛡️]':''}${tags['badges'] != null ? tags['badges']['broadcaster'] ? '**[📣]':'' : ''} ${tags['display-name']}${tags['badges'] != null ? tags['badges']['broadcaster'] ? '**':'' : ''}: ${message}`;
-        messages.push(str);
-    });
+    for (let channel in logs) {
+        if (!logs[channel].length) continue;
+        let fileName = `/${moment().format("YYYY-MM-DD")}_${channel.substring(1)}.json`;
 
-    function sendLogDiscord() {
-        if (!messages.length) return;
-        let content = messages.join('\n');
-
-        fetch(config.discord_integration.webhook, {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify({"content": content})
-        }).catch(r => console.log(r));
-
-        messages = [];
-    }
-}
-
-function ensureExists(path, mask, cb) {
-    if (typeof mask == 'function') {
-        cb = mask;
-        mask = 0o777;
-    }
-    fs.mkdir(path, mask, function(err) {
-        if (err) {
-            if (err.code === 'EEXIST') cb(null);
-            else cb(err);
-        } else cb(null);
-    });
-}
-
-function getEmoticonUrl(id) {
-    return `https://static-cdn.jtvnw.net/emoticons/v1/${id}/1.0`;
-}
-
-function fetchImage(url, localPath, index) {
-    var extensions = ['jpg', 'png', 'jpeg', 'bmp'];
-
-    if (index === extensions.length) {
-        console.log('Fetching ' + url + ' failed.');
-        return;
-    }
-
-    var fullUrl = url + extensions[index];
-
-    request.get(fullUrl, function(response) {
-        if (response.statusCode === 200) {
-            fs.write(localPath, response.body, function() {
-                console.log('Successfully downloaded file ' + url);
-            });
-        }
-
-        else {
-            fetchImage(url, localPath, index + 1);
-        }
-    });
-}
-
-function saveImageToDisk(url, localPath) {
-    var fullUrl = url;
-    var file = fs.createWriteStream(localPath);
-    var request = https.get(url, function(response) {
-        response.pipe(file);
-    });
-}
-
-const getBinary = async (params = undefined) => {
-    /**
-     * @auther: Shankha
-     * @date: 26 Apr, 2020
-     */
-
-        // params format:
-        // getBinary({
-        //   path : '<file_relative_path>',
-        //   padlength: '<prepending_padding_length>', (Default: 4)
-        //   debug: false,                             (Default: true)
-        //   limit: 10                                 (Default: Full_File_Length)
-        //   putSpacing: Boolean                       (Default: false)
-        // })
-
-        // Params Description:
-        //   1. path: Specifies the relative file path, to be read.
-        //   2. padlength: After reading the file, it reads object as number
-        //                 (ex: hex(f): 1111, hex(0): 0), so if you need a
-        //                 unform lenght binary string then you will need to
-        //                 fill the strings. as hex(0): 0000 when padlength is 4.
-        //   3. limit: limits the read buffer to render.
-        //   4. putSpacing: if true it puts a space after each padlength.
-
-        //
-        // or
-        // getBinary('<file_relative_path>');
-
-    let fs = require("fs");
-    let result = '';
-    try {
-
-        if ((typeof params) == 'string') {
-            params = {
-                path: params
-            };
-        }
-        if (params) {
-            let mendatoryKeys = ['path'];
-            for (let i = 0; i < mendatoryKeys.length; i++) {
-                if (!params.hasOwnProperty(mendatoryKeys[i])) {
-                    throw "JSON key " + mendatoryKeys[i] + " is expected in prarameter object";
-                }
-            }
-            let hexBuffer = Buffer.from(fs.readFileSync(params.path)).toString('hex');
-            let padding = params.hasOwnProperty('padlength') ? params.padlength : 4;
-            let limit = params.hasOwnProperty('limit') ? parseInt(params.limit) : hexBuffer.length;
-            let putSpacing = params.hasOwnProperty('putSpacing') ? params.putSpacing : false;
-            if (typeof putSpacing == 'boolean') {
-                putSpacing = putSpacing ? ' ' : '';
+        ensureExists(path, {recursive: true}, function (err) {
+            if (err) {
+                console.log(err);
             } else {
-                throw "JSON key 'putSpacing' is expected as boolean";
+                fs.readFile(path + fileName, (err, data) => {
+                    if (err) {
+                        fs.writeFile(path + fileName, JSON.stringify(logs[channel]), (err) => {
+                            if (err) {
+                                console.error(err)
+                            }
+
+                            logs[channel] = [];
+                        })
+                    } else {
+                        let json = JSON.parse(data);
+                        json = json.concat(logs[channel]);
+                        fs.writeFile(path + fileName, JSON.stringify(json), (err) => {
+                            if (err) {
+                                console.error(err)
+                            }
+
+                            logs[channel] = [];
+                        });
+                    }
+                });
             }
-            for (let i = 0; i < limit; i++) {
-                result += String(parseInt(hexBuffer[i], 16).toString(2).substr(-8)).padStart(padding, '0') + putSpacing;
-            }
-        } else {
-            throw "JSON object is expected as prarameter, but got undefined"
-        }
-    } catch (e) {
-        if (params.hasOwnProperty('debug') ? params.debug : true) {
-            console.log(e);
-        }
-    } finally {
-        return (result.trim() === '') ? undefined : result.trim();
+        });
     }
 }
+
 
 const canvas = createCanvas(256, 256);
 const ctx = canvas.getContext('2d');
@@ -302,7 +227,8 @@ const avatarCache = {};
 
 async function generateAvatarImage(name, color, user) {
     if (avatarCache.hasOwnProperty(user)) {
-        return avatarCache[user];
+        avatarCache[user].lastUsed = Date.now();
+        return avatarCache[user].data;
     } else {
         // Background
         ctx.fillStyle = color;
@@ -321,7 +247,53 @@ async function generateAvatarImage(name, color, user) {
 
         // Cache and export
         let data = canvas.toDataURL().split(',')[1];
-        avatarCache[user] = data;
+
+        if (Object.keys(avatarCache).length >= 500) {
+            let oldestCache;
+            let oldestCacheAge;
+            for (let avatar in avatarCache) {
+                if (oldestCache == null || oldestCacheAge == null || avatarCache[avatar].lastUsed < avatarCache[avatar]) {
+                    oldestCache = avatar;
+                    oldestCacheAge = avatarCache[avatar].lastUsed;
+                }
+            }
+            delete avatarCache[oldestCache];
+        }
+
+        avatarCache[user] = {data: data, lastUsed: Date.now()};
         return data;
     }
+}
+
+function clearAvatarCache() {
+    for (let avatar in avatarCache) {
+        if ((Date.now() - avatarCache[avatar].lastUsed) < 60 * 60 * 1000) {
+            delete avatarCache[avatar];
+        }
+    }
+}
+
+function ensureExists(path, mask, cb) {
+    if (typeof mask == 'function') {
+        cb = mask;
+        mask = 0o777;
+    }
+    fs.mkdir(path, mask, function(err) {
+        if (err) {
+            if (err.code === 'EEXIST') cb(null);
+            else cb(err);
+        } else cb(null);
+    });
+}
+
+function saveImageToDisk(url, localPath) {
+    let fullUrl = url;
+    let file = fs.createWriteStream(localPath);
+    let request = https.get(url, function(response) {
+        response.pipe(file);
+    });
+}
+
+function getEmoticonUrl(id) {
+    return `https://static-cdn.jtvnw.net/emoticons/v1/${id}/1.0`;
 }
