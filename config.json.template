@@ -1,5 +1,13 @@
 {
   "twitch_channels": ["channelName"],
+  "twitch_authentication": {
+    "enabled": true,
+    "username": "botAccountName",
+    "access_token": "xxxxxxxxx",
+    "refresh_token": "xxxxxxxxxxx",
+    "client_id": "xxxxxxxxx",
+    "client_secret": "xxxxxxxx"
+  },
   "discord_integration": {
     "enabled": false,
     "webhook": "",
@@ -11,7 +19,7 @@
   },
   "local_files": {
     "enabled": true,
-    "cache_emotes": true,
+    "cache_emotes": false,
     "log_interval": 5000
   },
   "open_vr_notification_pipe": {
