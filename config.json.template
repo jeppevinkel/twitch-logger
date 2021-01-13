@@ -25,6 +25,9 @@
   "open_vr_notification_pipe": {
     "enabled": false,
     "host": "ws://localhost",
-    "port": 8077
+    "port": 8077,
+    "ignoreBroadcaster": false,
+    "ignoreUsers": [],
+    "ignorePrefixes": []
   }
 }
