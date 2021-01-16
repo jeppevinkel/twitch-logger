@@ -28,11 +28,12 @@ const run = async () => {
         chat = new TwitchJs.Chat({
             token: config.twitch_authentication.access_token,
             username: config.twitch_authentication.username,
-            onAuthenticationFailure: onAuthenticationFailure
+            onAuthenticationFailure: onAuthenticationFailure,
+            log: {level: config.logging_level}
         });
     }
     else {
-        chat = new TwitchJs.Chat({log: {level: "warn"}});
+        chat = new TwitchJs.Chat({log: {level: config.logging_level}});
     }
 
     // Initialize loops upon connecting

@@ -1,5 +1,6 @@
 {
   "twitch_channels": ["channelName"],
+  "logging_level": "warn",
   "twitch_authentication": {
     "enabled": true,
     "username": "botAccountName",
