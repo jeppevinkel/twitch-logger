@@ -1,13 +1,14 @@
-const TwitchJs = require('twitch-js');
-const moment = require('moment/moment.js');
-const config = require('./config.json');
+// Includes
+
 const fs = require('fs');
 const https = require('https');
 const fetch = require('node-fetch');
-const WebSocket = require('ws');
-const { createCanvas } = require('canvas');
+const TwitchJs = require('twitch-js');
+const moment = require('moment/moment.js');
 
-let websocket;
+const config = require('./config.json');
+const pipe = require('./modules/pipe.js');
+
 let discordMessages = [];
 let logs = {};
 
@@ -15,44 +16,8 @@ let logs = {};
 // Loop variables
 let discordLogInterval;
 let localLogInterval
-let clearCacheInterval;
 
-if (config.open_vr_notification_pipe.enabled) {
-    let active = false;
-
-    connectLoop();
-
-    function connectLoop()
-    {
-        if(!active) {
-            if(typeof websocket !== 'undefined') websocket.close();
-            websocket = new WebSocket(`${config.open_vr_notification_pipe.host}:${config.open_vr_notification_pipe.port}`);
-            websocket.onopen = function(evt) { onOpen(evt) };
-            websocket.onclose = function(evt) { onClose(evt) };
-            websocket.onerror = function(evt) { onError(evt) };
-        }
-        setTimeout(connectLoop, 5000);
-    }
-
-    function onOpen(evt)
-    {
-        active = true;
-        console.log("Started clearCacheInterval");
-        clearCacheInterval = setInterval(clearAvatarCache, 60 * 60 * 1000);
-    }
-
-    function onClose(evt)
-    {
-        active = false;
-        console.log("Stopped clearCacheInterval");
-        clearInterval(clearCacheInterval);
-        clearAvatarCache();
-    }
-
-    function onError(evt) {
-        console.log("ERROR: "+JSON.stringify(evt, null, 2));
-    }
-}
+pipe.init(config.open_vr_notification_pipe);
 
 const onAuthenticationFailure = () =>
     fetch('https://id.twitch.tv/oauth2/token', {
@@ -105,7 +70,7 @@ const run = async () => {
 
     Promise.all(config.twitch_channels.map(channel => chat.join(channel))).then(channelStates => {
         chat.on('PRIVMSG', message => {
-            if (config.open_vr_notification_pipe.enabled) pushToVR(message);
+            if (config.open_vr_notification_pipe.enabled) pipe.push(message);
             if (config.discord_integration.enabled) pushToDiscord(message);
             if (config.local_files.enabled) pushToLocal(message);
         });
@@ -115,22 +80,6 @@ const run = async () => {
 run().catch(e => {
     console.log(e);
 });
-
-function pushToVR(message) {
-    var skip = false;
-    if (config.open_vr_notification_pipe.muteBroadcaster && message.tags.badges.hasOwnProperty('broadcaster')) skip = true;
-    config.open_vr_notification_pipe.ignoreUsers.forEach(function (user) { if (message.tags.username.toLowerCase() == user.toLowerCase()) skip = true; });
-    config.open_vr_notification_pipe.ignorePrefixes.forEach(function (prefix) { if (message.message.indexOf(prefix) == 0) skip = true; });
-    if (skip) {
-        console.log(`Skipped message from: ${message.tags.displayName}`);
-    } else {
-        generateAvatarImage(message.tags.displayName, message.tags.color, message.username).then((data) => {
-            websocket.send(JSON.stringify({ title: "Twitch-Logger", message: `${message.tags.displayName}: ${message.message}`, image: data }));
-        }).catch(() => {
-            websocket.send(JSON.stringify({ title: "Twitch-Logger", message: `${message.tags.displayName}: ${message.message}` }));
-        });
-    }
-}
 
 function logLoopDiscord() {
     sendLogDiscord();
@@ -229,59 +178,6 @@ function sendLogLocal() {
                 });
             }
         });
-    }
-}
-
-
-const canvas = createCanvas(256, 256);
-const ctx = canvas.getContext('2d');
-const avatarCache = {};
-
-async function generateAvatarImage(name, color, user) {
-    if (avatarCache.hasOwnProperty(user)) {
-        avatarCache[user].lastUsed = Date.now();
-        return avatarCache[user].data;
-    } else {
-        // Background
-        ctx.fillStyle = color;
-        ctx.fillRect(0, 0, 256, 256);
-
-        // Text
-        let text = name.substr(0, 2);
-        ctx.textBaseline = "middle";
-        ctx.textAlign = "center";
-        ctx.font = '128px Sans-serif';
-        ctx.strokeStyle = 'black';
-        ctx.lineWidth = 8;
-        ctx.strokeText(text, 128, 128);
-        ctx.fillStyle = 'white';
-        ctx.fillText(text, 128, 128);
-
-        // Cache and export
-        let data = canvas.toDataURL().split(',')[1];
-
-        if (Object.keys(avatarCache).length >= 500) {
-            let oldestCache;
-            let oldestCacheAge;
-            for (let avatar in avatarCache) {
-                if (oldestCache == null || oldestCacheAge == null || avatarCache[avatar].lastUsed < avatarCache[avatar]) {
-                    oldestCache = avatar;
-                    oldestCacheAge = avatarCache[avatar].lastUsed;
-                }
-            }
-            delete avatarCache[oldestCache];
-        }
-
-        avatarCache[user] = {data: data, lastUsed: Date.now()};
-        return data;
-    }
-}
-
-function clearAvatarCache() {
-    for (let avatar in avatarCache) {
-        if ((Date.now() - avatarCache[avatar].lastUsed) < 60 * 60 * 1000) {
-            delete avatarCache[avatar];
-        }
     }
 }
 
