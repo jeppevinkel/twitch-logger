@@ -22,7 +22,7 @@ dirs(logsRoot).then(async dirs => {
         console.log(files);
         for(const file of files) {
             const fromPath = join(logFolder, file);
-            const toPath = join(logFolder, file.replace("#", ""));
+            const toPath = join(logFolder, file.replace("#", "").replace(".json", "_updated.json"));
             const fileStat = await stat(fromPath);
             if(!fileStat.isFile()) continue;
 
