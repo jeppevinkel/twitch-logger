@@ -48,33 +48,31 @@
                 chatMessage = document.createElement('span');
 
             chatLine.className = 'chat-line chat-action';
-            chatLine.dataset.username = data[i].display_name;
+            chatLine.dataset.username = data[i].displayName;
 
             chatTime.className = 'chat-time';
             chatTime.style.color = 'grey';
-            chatTime.innerHTML = `${moment(parseInt(data[i].sent_ts)).format('HH:mm')}`;
+            chatTime.innerHTML = `${moment(parseInt(data[i].tmiSentTs)).format('HH:mm')}`;
 
             chatName.className = 'chat-name';
             chatName.style.color = data[i].color;
-            chatName.innerHTML = data[i].display_name;
+            chatName.innerHTML = data[i].displayName;
 
             chatColon.className = 'chat-colon';
 
             chatMessage.style.color = data[i].color;
 
-            let message = data[i].message_content;
+            let message = data[i].messageContent;
             if (data[i].emotes) {
                 let placements = [];
                 let offset = 0;
-                Object.keys(data[i].emotes).forEach(function (key) {
-                    data[i].emotes[key].forEach(function (placement) {
-                        placements.push([placement, key]);
-                    })
-                });
-                placements = placements.sort(function (a, b) {return parseInt(a[0].split("-")[0]) - parseInt(b[0].split("-")[0])});
+                for (let j = 0; j < data[i].emotes.length; j++) {
+                    console.log(data[i].emotes[j]);
+                    placements.push([data[i].emotes[j].start, data[i].emotes[j].end, data[i].emotes[j].id]);
+                }
+                placements = placements.sort(function (a, b) {return parseInt(a[0]) - parseInt(b[0])});
                 placements.forEach(function (placement) {
-                    let limits = placement[0].split("-");
-                    let msgData = insertEmote(message, offset, parseInt(limits[0]), parseInt(limits[1]), getEmoticonUrl(placement[1]));
+                    let msgData = insertEmote(message, offset, parseInt(placement[0]), parseInt(placement[1]), getEmoticonUrl(placement[2]));
                     message = msgData[0];
                     offset += msgData[1];
                 })
