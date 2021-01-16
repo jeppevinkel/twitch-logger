@@ -22,6 +22,8 @@ function stop() {
 }
 
 function push(message) {
+    if (!_config.enabled) return;
+    
     let msg = {
         "badges": message.tags.badges,
         "color": message.tags.color,

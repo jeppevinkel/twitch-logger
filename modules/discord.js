@@ -1,5 +1,6 @@
 const fetch = require('node-fetch');
 const moment = require('moment/moment.js');
+const utils = require('./utils.js');
 
 let _config;
 let _messages = [];
@@ -35,8 +36,26 @@ function stop() {
 }
 
 function push(message) {
+    if (!_config.enabled) return;
+
     let dt = moment(parseInt(message.tags['tmiSentTs']));
-    let str = `[${message.channel}][${dt.format('HH:mm')}] ${_config.subscriber_badge.enabled ? (message.tags['subscriber'] ? `[${_config.subscriber_badge.emoji}]`:'') : ''}${message.tags['mod'] ? '[🛡️]':''}${message.tags['badges'] != null ? message.tags['badges']['broadcaster'] ? '**[📣]':'' : ''} ${message.tags['displayName']}${message.tags['badges'] != null ? message.tags['badges']['broadcaster'] ? '**':'' : ''}: ${message.message}`;
+    let meta = `[${message.channel}][${dt.format('HH:mm')}]`;
+    
+    // Checks
+    let isBroadcaster = utils.isTagTrue(message, 'badges', 'broadcaster');
+    let isFounder = utils.getTagValue(message, 'badges', 'founder');
+    let isSub = _config.subscriber_badge.enabled && (isFounder || isBroadcaster || utils.isTagTrue(message, 'subscriber'));
+
+    // Badges
+    let subBadge = isSub ? `[${_config.subscriber_badge.emoji}]`:'';
+    let modBadge = utils.isTagTrue(message, 'mod') ? '[🛡️]':'';
+    let broadcasterBadge = isBroadcaster ? '[📣]':'';
+    
+    // Name
+    let displayName = utils.getTagValue(message, 'displayName');
+    if(isBroadcaster) displayName = `**${displayName}**`; // Bold broadcaster
+    
+    let str = `${meta} ${subBadge}${modBadge}${broadcasterBadge} ${displayName}: ${message.message}`;
     _messages.push(str);
 }
 

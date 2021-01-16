@@ -44,7 +44,9 @@ function init(config) {
 }
 
 function push(message) {
-    var skip = !_config.enabled; // Always skip pushing if this is not enabled in the first place.
+    if(!_config.enabled) return;
+
+    var skip = false;
     if (_config.muteBroadcaster && message.tags.badges.hasOwnProperty('broadcaster')) skip = true;
     _config.ignoreUsers.forEach(function (user) { if (message.tags.username.toLowerCase() == user.toLowerCase()) skip = true; });
     _config.ignorePrefixes.forEach(function (prefix) { if (message.message.indexOf(prefix) == 0) skip = true; });
