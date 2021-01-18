@@ -47,6 +47,21 @@
                 chatColon = document.createElement('span'),
                 chatMessage = document.createElement('span');
 
+            let chatData;
+
+            switch (data[i].event) {
+                case 'PRIVMSG':
+                    chatData = getMessageData(data[i]);
+                    break;
+                case 'FOLLOW':
+                    chatData = getFollowData(data[i]);
+                    break;
+                default:
+                    chatData = document.createElement("div");
+                    chatData.className = 'chat-line chat-action';
+                    break;
+            }
+
             chatLine.className = 'chat-line chat-action';
             chatLine.dataset.username = data[i].displayName;
 
@@ -83,9 +98,88 @@
             chatLine.appendChild(chatName);
             chatLine.appendChild(chatColon);
             chatLine.appendChild(chatMessage);
-
-            mainContainer.appendChild(chatLine);
+            console.log(chatData);
+            mainContainer.appendChild(chatData);
         }
+    }
+
+    function getMessageData(data) {
+        let chatLine = document.createElement("div"),
+            chatTime = document.createElement('span'),
+            chatName = document.createElement('span'),
+            chatColon = document.createElement('span'),
+            chatMessage = document.createElement('span');
+
+        chatLine.className = 'chat-line chat-action';
+        chatLine.dataset.username = data.displayName;
+
+        chatTime.className = 'chat-time';
+        chatTime.style.color = 'grey';
+        chatTime.innerHTML = `${moment(parseInt(data.tmiSentTs)).format('HH:mm')}`;
+
+        chatName.className = 'chat-name';
+        chatName.style.color = data.color;
+        chatName.innerHTML = data.displayName;
+
+        chatColon.className = 'chat-colon';
+
+        chatMessage.style.color = 'black';
+
+        let message = data.messageContent;
+        if (data.emotes) {
+            let placements = [];
+            let offset = 0;
+            for (let j = 0; j < data.emotes.length; j++) {
+                console.log(data.emotes[j]);
+                placements.push([data.emotes[j].start, data.emotes[j].end, data.emotes[j].id]);
+            }
+            placements = placements.sort(function (a, b) {return parseInt(a[0]) - parseInt(b[0])});
+            placements.forEach(function (placement) {
+                let msgData = insertEmote(message, offset, parseInt(placement[0]), parseInt(placement[1]), getEmoticonUrl(placement[2]));
+                message = msgData[0];
+                offset += msgData[1];
+            })
+        }
+        chatMessage.innerHTML += message;
+
+        chatLine.appendChild(chatTime);
+        chatLine.appendChild(chatName);
+        chatLine.appendChild(chatColon);
+        chatLine.appendChild(chatMessage);
+
+        return chatLine;
+    }
+
+    function getFollowData(data) {
+        let chatLine = document.createElement("div"),
+            chatTime = document.createElement('span'),
+            chatName = document.createElement('span'),
+            chatColon = document.createElement('span'),
+            chatMessage = document.createElement('span');
+
+        chatLine.className = 'chat-line chat-action';
+        chatLine.dataset.username = data.displayName;
+
+        chatTime.className = 'chat-time';
+        chatTime.style.color = 'darkgrey';
+        chatTime.innerHTML = `${moment(parseInt(data.tmiSentTs)).format('HH:mm')}`;
+
+        chatName.className = 'chat-name';
+        chatName.style.color = 'darkgrey';
+        chatName.style.fontStyle = 'italic';
+        chatName.innerHTML = 'Follow!';
+
+        chatColon.className = 'chat-colon';
+
+        chatMessage.style.color = 'darkgrey';
+        chatMessage.innerHTML = data.displayName;
+
+        chatLine.appendChild(chatTime);
+        chatLine.appendChild(chatName);
+        chatLine.appendChild(chatColon);
+        chatLine.appendChild(chatMessage);
+
+        return chatLine;
     }
 
     function httpGetAsync(theUrl, callback)

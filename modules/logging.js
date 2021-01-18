@@ -23,21 +23,18 @@ function stop() {
 
 function push(message) {
     if (!_config.enabled) return;
-    
-    let msg = {
-        "badges": message.tags.badges,
-        "color": message.tags.color,
-        "displayName": message.tags.displayName,
-        "emotes": message.tags.emotes,
-        "flags": message.tags.flags,
-        "mod": (message.tags.mod === "1"),
-        "subscriber": message.tags.subscriber === "1",
-        "tmiSentTs": message.tags.tmiSentTs,
-        "userType": message.tags.userType,
-        "username": message.username,
-        "event": message.event,
-        "messageContent": message.message
-    };
+    let msg;
+
+    switch (message.event) {
+        case 'PRIVMSG':
+            msg = formatMessage(message);
+            break;
+        case 'FOLLOW':
+            msg = formatFollow(message);
+            break;
+        default:
+            break;
+    }
 
     if (_config.cache_emotes && msg.emotes != null) {
         let imgPath = `${_rootFolder}/cache/emotes`;
@@ -51,6 +48,31 @@ function push(message) {
 
     if (!_logs[message.channel]) _logs[message.channel] = [];
     _logs[message.channel].push(msg);
+}
+
+function formatMessage(message) {
+    return {
+        "badges": message.tags.badges,
+        "color": message.tags.color,
+        "displayName": message.tags.displayName,
+        "emotes": message.tags.emotes,
+        "flags": message.tags.flags,
+        "mod": (message.tags.mod === "1"),
+        "subscriber": message.tags.subscriber === "1",
+        "tmiSentTs": message.tags.tmiSentTs,
+        "userType": message.tags.userType,
+        "username": message.username,
+        "event": message.event,
+        "messageContent": message.message
+    };
+}
+
+function formatFollow(follow) {
+    return {
+        "displayName": follow.displayName,
+        "tmiSentTs": follow.timestamp,
+        "event": follow.event,
+    };
 }
 
 function sendLog() {

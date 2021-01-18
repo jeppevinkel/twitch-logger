@@ -37,10 +37,26 @@ function stop() {
 
 function push(message) {
     if (!_config.enabled) return;
+    let str;
 
+    switch (message.event) {
+        case 'PRIVMSG':
+            str = formatMessage(message);
+            break;
+        case 'FOLLOW':
+            str = formatFollow(message);
+            break;
+        default:
+            break;
+    }
+
+    _messages.push(str);
+}
+
+function formatMessage(message) {
     let dt = moment(parseInt(message.tags['tmiSentTs']));
     let meta = `[${message.channel}][${dt.format('HH:mm')}]`;
-    
+
     // Checks
     let isBroadcaster = utils.isTagTrue(message, 'badges', 'broadcaster');
     let isFounder = utils.getTagValue(message, 'badges', 'founder');
@@ -50,13 +66,19 @@ function push(message) {
     let subBadge = isSub ? `[${_config.subscriber_badge.emoji}]`:'';
     let modBadge = utils.isTagTrue(message, 'mod') ? '[🛡️]':'';
     let broadcasterBadge = isBroadcaster ? '[📣]':'';
-    
+
     // Name
     let displayName = utils.getTagValue(message, 'displayName');
     if(isBroadcaster) displayName = `**${displayName}**`; // Bold broadcaster
-    
-    let str = `${meta} ${subBadge}${modBadge}${broadcasterBadge} ${displayName}: ${message.message}`;
-    _messages.push(str);
+
+    return `${meta} ${subBadge}${modBadge}${broadcasterBadge} ${displayName}: ${message.message}`;
+}
+
+function formatFollow(follow) {
+    let dt = moment(parseInt(follow['timestamp']));
+    let meta = `[#${follow.channel}][${dt.format('HH:mm')}]`;
+
+    return `${meta} ***${follow.displayName} is now following!***`;
 }
 
 module.exports = { init, start, stop, push };

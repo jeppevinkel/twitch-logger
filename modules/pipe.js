@@ -46,6 +46,19 @@ function init(config) {
 function push(message) {
     if(!_config.enabled) return;
 
+    switch (message.event) {
+        case 'PRIVMSG':
+            pushMessage(message);
+            break;
+        case 'FOLLOW':
+            pushFollow(message);
+            break;
+        default:
+            break;
+    }
+}
+
+function pushMessage(message) {
     var skip = false;
     if (_config.muteBroadcaster && message.tags.badges.hasOwnProperty('broadcaster')) skip = true;
     _config.ignoreUsers.forEach(function (user) { if (message.tags.username.toLowerCase() == user.toLowerCase()) skip = true; });
@@ -60,5 +73,10 @@ function push(message) {
         });
     }
 }
+
+function pushFollow(follow) {
+    _websocket.send(JSON.stringify({ title: "Twitch-Logger", message: `${follow.displayName} followed!` }));
+}
+
 
 module.exports = { init, push };
