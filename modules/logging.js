@@ -90,7 +90,6 @@ function sendLog() {
             } else {
                 fs.readFile(path + fileName, (err, data) => {
                     if (err) {
-                        console.error(err)
                         fs.writeFile(path + fileName, JSON.stringify(_logs[channel]), (err) => {
                             if (err) {
                                 console.error(err)
