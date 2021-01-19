@@ -63,7 +63,8 @@ function formatMessage(message) {
         "userType": message.tags.userType,
         "username": message.username,
         "event": message.event,
-        "messageContent": message.message
+        "messageContent": message.message,
+        "profileImageUrl": message.profileImageUrl
     };
 }
 

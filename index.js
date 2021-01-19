@@ -28,6 +28,7 @@ const onAuthenticationFailure = () =>
         headers: {'Content-Type': 'application/json'}
     }).then((response) => response.json()).then(json => {
         oauthInfo.access_token = json.access_token;
+        oauthInfo.refresh_token = json.refresh_token;
         console.log(json);
         return json.access_token;
     });
@@ -73,7 +74,11 @@ const run = async () => {
             setInterval(checkFollowers, 1000 * 10, channelStates[i].roomState.roomId);
         }
 
-        chat.on('PRIVMSG', message => {
+        chat.on('PRIVMSG', async message => {
+            if (api) {
+                message.profileImageUrl = (await api.get('users', {search: {'login': message.username}})).data[0]['profileImageUrl'];
+            }
+
             pipe.push(message);
             discord.push(message);
             logging.push(message);
