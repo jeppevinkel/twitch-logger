@@ -39,6 +39,8 @@ const onAuthenticationFailure = () =>
             });
         }
 
+        console.log('Refreshed access token.');
+
         return json.access_token;
     });
 
@@ -64,11 +66,6 @@ const run = async () => {
             onAuthenticationFailure: onAuthenticationFailure,
             log: {level: config.logging_level}
         });
-        api = new TwitchJs.Api({
-            token: oauthInfo.access_token,
-            clientId: config.twitch_authentication.client_id,
-            log: {level: config.logging_level}
-        });
     }
     else {
         chat = new TwitchJs.Chat({log: {level: config.logging_level}});
@@ -79,6 +76,14 @@ const run = async () => {
         console.log("################  CONNECTED TO TWITCH  ################");
         discord.start();
         logging.start();
+
+        if (config.twitch_authentication.enabled) {
+            api = new TwitchJs.Api({
+                token: oauthInfo.access_token,
+                clientId: config.twitch_authentication.client_id,
+                log: {level: config.logging_level}
+            });
+        }
     });
 
     // Stop loops when disconnecting
