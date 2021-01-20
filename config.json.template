@@ -4,8 +4,6 @@
   "twitch_authentication": {
     "enabled": true,
     "username": "botAccountName",
-    "access_token": "xxxxxxxxx",
-    "refresh_token": "xxxxxxxxxxx",
     "client_id": "xxxxxxxxx",
     "client_secret": "xxxxxxxx"
   },
