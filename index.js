@@ -83,6 +83,14 @@ const run = async () => {
             discord.push(message);
             logging.push(message);
         });
+
+        if (config.log_raw) {
+            chat.on(TwitchJs.Events.ALL, async message => {
+                message.logRaw = true;
+
+                logging.push(message);
+            });
+        }
     });
 
     function checkFollowers(channelId) {

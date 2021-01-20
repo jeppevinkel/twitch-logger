@@ -30,5 +30,6 @@
     "ignoreBroadcaster": false,
     "ignoreUsers": [],
     "ignorePrefixes": []
-  }
+  },
+  "log_raw": false
 }

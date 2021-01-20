@@ -25,6 +25,13 @@ function push(message) {
     if (!_config.enabled) return;
     let msg;
 
+    if (message.logRaw && message.channel !== 'tmi.twitch.tv') {
+
+        if (!_logs[`${message.channel}_raw`]) _logs[`${message.channel}_raw`] = [];
+        _logs[`${message.channel}_raw`].push(message);
+        return;
+    }
+
     switch (message.event) {
         case 'PRIVMSG':
             msg = formatMessage(message);
