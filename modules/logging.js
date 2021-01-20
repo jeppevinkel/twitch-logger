@@ -25,7 +25,7 @@ function push(message) {
     if (!_config.enabled) return;
     let msg;
 
-    if (message.logRaw && message.channel !== 'tmi.twitch.tv') {
+    if (message.logRaw) {
 
         if (!_logs[`${message.channel}_raw`]) _logs[`${message.channel}_raw`] = [];
         _logs[`${message.channel}_raw`].push(message);
@@ -103,7 +103,7 @@ function sendLog() {
                                 console.error(err)
                             }
                             _logs[channel] = [];
-                        })
+                        });
                     } else {
                         let json = JSON.parse(data);
                         json = json.concat(_logs[channel]);

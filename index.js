@@ -1,16 +1,20 @@
 // Includes
 const TwitchJs = require('twitch-js');
 const moment = require("moment");
+const fs = require('fs');
+const fetch = require('node-fetch');
 
 const config = require('./config.json');
 const discord = require('./modules/discord.js');
 const logging = require('./modules/logging.js');
 const pipe = require('./modules/pipe.js');
 
+let oauthInfo = {access_token: '', refresh_token: ''};
+
 const followers = {};
 let botStartTime = moment.now();
 
-let oauthInfo = config.twitch_authentication;
+
 
 pipe.init(config.open_vr_notification_pipe);
 discord.init(config.discord_integration);
@@ -19,32 +23,50 @@ logging.init(config.local_files);
 const onAuthenticationFailure = () =>
     fetch('https://id.twitch.tv/oauth2/token', {
         method: 'post',
-        body: JSON.stringify({
-            grant_type: 'refresh_token',
-            refresh_token: oauthInfo.refresh_token,
-            client_id: oauthInfo.client_id,
-            client_secret: oauthInfo.client_secret,
-        }),
-        headers: {'Content-Type': 'application/json'}
+        body: new URLSearchParams({
+                'grant_type': 'refresh_token',
+                'refresh_token': oauthInfo.refresh_token,
+                'client_id': config.twitch_authentication.client_id,
+                'client_secret': config.twitch_authentication.client_secret
+            })
     }).then((response) => response.json()).then(json => {
-        oauthInfo.access_token = json.access_token;
-        oauthInfo.refresh_token = json.refresh_token;
-        console.log(json);
+        if (!json.error && json.status !== 400 && json.status !== 401) {
+            oauthInfo.access_token = json.access_token;
+            oauthInfo.refresh_token = json.refresh_token;
+
+            fs.writeFile('./tokens.json', JSON.stringify(oauthInfo), err => {
+                if (err) console.log(err);
+            });
+        }
+
         return json.access_token;
     });
 
 const run = async () => {
     let chat, api;
     if (config.twitch_authentication.enabled) {
+        try {
+            oauthInfo = JSON.parse(fs.readFileSync('./tokens.json', 'utf-8'));
+        } catch {
+            fs.writeFile('./tokens.json', JSON.stringify(oauthInfo), err => {
+                if (err) console.log(err);
+            });
+        }
+
+        if (oauthInfo.access_token === undefined || oauthInfo.refresh_token === undefined || oauthInfo.access_token === '' || oauthInfo.refresh_token === '') {
+            console.log('Please fill in token data in tokens.json to use authentication.');
+            return;
+        }
+
         chat = new TwitchJs.Chat({
             token: oauthInfo.access_token,
-            username: oauthInfo.username,
+            username: config.twitch_authentication.username,
             onAuthenticationFailure: onAuthenticationFailure,
             log: {level: config.logging_level}
         });
         api = new TwitchJs.Api({
             token: oauthInfo.access_token,
-            clientId: oauthInfo.client_id,
+            clientId: config.twitch_authentication.client_id,
             log: {level: config.logging_level}
         });
     }
