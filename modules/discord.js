@@ -46,6 +46,9 @@ function push(message) {
         case 'FOLLOW':
             str = formatFollow(message);
             break;
+        case 'SUBSCRIPTION_GIFT':
+            str = formatGiftSub(message);
+            break;
         default:
             break;
     }
@@ -79,6 +82,16 @@ function formatFollow(follow) {
     let meta = `[#${follow.channel}][${dt.format('HH:mm')}]`;
 
     return `${meta} ***${follow.displayName} is now following!***`;
+}
+
+function formatGiftSub(giftSub) {
+    let dt = moment(parseInt(giftSub.tags['tmiSentTs']));
+    let meta = `[${giftSub.channel}][${dt.format('HH:mm')}]`;
+
+    // Message
+    let systemMessage = utils.getTagValue(giftSub, 'systemMsg');
+
+    return `${meta} ***${systemMessage}***`;
 }
 
 module.exports = { init, start, stop, push };

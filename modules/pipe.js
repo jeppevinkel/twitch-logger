@@ -1,5 +1,6 @@
 const WebSocket = require('ws');
 const avatar = require('./avatar.js');
+const utils = require('./utils.js');
 
 let _websocket;
 let _clearCacheInterval;
@@ -7,10 +8,10 @@ let _config;
 
 function init(config) {
     _config = config;
-    
+
     let active = false;
     if(_config.enabled) connectLoop();
-      
+
     function connectLoop()
     {
         if(!active) {
@@ -22,14 +23,14 @@ function init(config) {
         }
         setTimeout(connectLoop, 5000);
     }
-    
+
     function onOpen(evt)
     {
         active = true;
         console.log("Started clearCacheInterval");
         _clearCacheInterval = setInterval(avatar.clearCache, 60 * 60 * 1000);
     }
-    
+
     function onClose(evt)
     {
         active = false;
@@ -37,7 +38,7 @@ function init(config) {
         clearInterval(_clearCacheInterval);
         avatar.clearCache();
     }
-    
+
     function onError(evt) {
         console.log("ERROR: "+JSON.stringify(evt, null, 2));
     }
@@ -66,11 +67,20 @@ function pushMessage(message) {
     if (skip) {
         console.log(`Skipped message from: ${message.tags.displayName}`);
     } else {
-        avatar.generate(message.tags.displayName, message.tags.color, message.username).then((data) => {
-            _websocket.send(JSON.stringify({ title: "Twitch-Logger", message: `${message.tags.displayName}: ${message.message}`, image: data }));
+        avatar.generate(message.tags.displayName, message.tags.color, message.username).then(data => {
+            utils.loadImage(message.profileImageUrl, `${message.tags.userId}.png`, "avatar", data).then(img => {
+                _websocket.send(JSON.stringify({ title: "Twitch-Logger", message: `${message.tags.displayName}: ${message.message}`, image: img}));
+            });
         }).catch(() => {
             _websocket.send(JSON.stringify({ title: "Twitch-Logger", message: `${message.tags.displayName}: ${message.message}` }));
         });
+
+        //_websocket.send(JSON.stringify({ title: "Twitch-Logger", message: `${message.tags.displayName}: ${message.message}`, image: avatar}));
+        // avatar.generate(message.tags.displayName, message.tags.color, message.username).then((data) => {
+        //     _websocket.send(JSON.stringify({ title: "Twitch-Logger", message: `${message.tags.displayName}: ${message.message}`, image: data }));
+        // }).catch(() => {
+        //     _websocket.send(JSON.stringify({ title: "Twitch-Logger", message: `${message.tags.displayName}: ${message.message}` }));
+        // });
     }
 }
 

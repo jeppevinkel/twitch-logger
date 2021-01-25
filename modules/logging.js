@@ -1,6 +1,7 @@
 const fs = require('fs');
 const https = require('https');
 const moment = require('moment/moment.js');
+const utils = require('./utils.js');
 
 const _rootFolder = process.cwd()+'/logs';
 let _config;
@@ -39,6 +40,9 @@ function push(message) {
         case 'FOLLOW':
             msg = formatFollow(message);
             break;
+        case 'SUBSCRIPTION_GIFT':
+            msg = formatGiftSub(message);
+            break;
         default:
             break;
     }
@@ -47,9 +51,10 @@ function push(message) {
         let imgPath = `${_rootFolder}/cache/emotes`;
         for (const emotesKey in msg.emotes) {
             let imgName = `/${msg.emotes[emotesKey].id}.png`;
-            ensureExists(imgPath, {recursive: true}, function (err) {
-                saveImageToDisk(getEmoticonUrl(msg.emotes[emotesKey].id), imgPath + imgName);
-            });
+            utils.loadImage(getEmoticonUrl(msg.emotes[emotesKey].id), `${msg.emotes[emotesKey].id}.png`, 'emotes', null)
+            // ensureExists(imgPath, {recursive: true}, function (err) {
+            //     saveImageToDisk(getEmoticonUrl(msg.emotes[emotesKey].id), imgPath + imgName);
+            // });
         }
     }
 
@@ -69,9 +74,11 @@ function formatMessage(message) {
         "tmiSentTs": message.tags.tmiSentTs,
         "userType": message.tags.userType,
         "username": message.username,
+        "userId": message.userId,
         "event": message.event,
         "messageContent": message.message,
-        "profileImageUrl": message.profileImageUrl
+        "profileImageUrl": message.profileImageUrl,
+        "msgId": message.msgId
     };
 }
 
@@ -80,6 +87,33 @@ function formatFollow(follow) {
         "displayName": follow.displayName,
         "tmiSentTs": follow.timestamp,
         "event": follow.event,
+    };
+}
+
+function formatGiftSub(giftSub) {
+    return {
+        "color": giftSub.tags.color,
+        "senderInfo": {
+            "username": giftSub.username,
+            "displayName": giftSub.tags.displayName,
+            "userId": giftSub.tags.userId,
+            "badges": giftSub.tags.badges
+        },
+        "recipientInfo": {
+            "username": giftSub.parameters.recipientUserName,
+            "displayName": giftSub.parameters.recipientDisplayName,
+            "userId": giftSub.parameters.recipientId
+        },
+        "subscriptionInfo": {
+            "giftMonths": giftSub.parameters.giftMonths,
+            "months": giftSub.parameters.months,
+            "subPlanName": giftSub.parameters.subPlanName,
+            "subPlan": giftSub.parameters.subPlan
+        },
+        "messageContent": giftSub.systemMessage,
+        "tmiSentTs": giftSub.tags.tmiSentTs,
+        "event": giftSub.event,
+        "msgId": giftSub.msgId
     };
 }
 
@@ -92,7 +126,7 @@ function sendLog() {
         if (!_logs[channel].length) continue;
         let fileName = `/${moment().format("YYYY-MM-DD")}_${channel.substring(1)}.json`;
 
-        ensureExists(path, {recursive: true}, function (err) {
+        utils.ensureExists(path, {recursive: true}, function (err) {
             if (err) {
                 console.log(err);
             } else {
@@ -118,27 +152,6 @@ function sendLog() {
             }
         });
     }
-}
-
-function ensureExists(path, mask, cb) {
-    if (typeof mask == 'function') {
-        cb = mask;
-        mask = 0o777;
-    }
-    fs.mkdir(path, mask, function(err) {
-        if (err) {
-            if (err.code === 'EEXIST') cb(null);
-            else cb(err);
-        } else cb(null);
-    });
-}
-
-function saveImageToDisk(url, localPath) {
-    let fullUrl = url;
-    let file = fs.createWriteStream(localPath);
-    let request = https.get(url, function(response) {
-        response.pipe(file);
-    });
 }
 
 function getEmoticonUrl(id) {

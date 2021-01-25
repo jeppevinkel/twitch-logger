@@ -1,3 +1,6 @@
+const fs = require('fs');
+const https = require('https');
+
 function getTagValue(message, tag, subTag = null) {
     if (contains(message, 'tags') && contains(message.tags, tag)) {
         if (typeof subTag == 'string') {
@@ -25,4 +28,57 @@ function isTrue(value) {
     return false;
 }
 
-module.exports = { getTagValue, isTagTrue }
+function ensureExists(path, mask, cb) {
+    if (typeof mask == 'function') {
+        cb = mask;
+        mask = 0o777;
+    }
+    fs.mkdir(path, mask, function(err) {
+        if (err) {
+            if (err.code === 'EEXIST') cb(null);
+            else cb(err);
+        } else cb(null);
+    });
+}
+
+function saveImageToDisk(url, localPath) {
+    return new Promise((resolve, reject) => {
+        let file = fs.createWriteStream(localPath);
+        let request = https.get(url, function (response) {
+            response.pipe(file);
+            file.on('close', resolve);
+            file.on('finish', function() {
+                file.close();
+            });
+        }).on('error', function (err) {
+            fs.unlink(localPath, null);
+            reject(err);
+        });
+    })
+}
+
+async function loadImage(url, localName, category, fallback) {
+    let imgDir = `${process.cwd()+'/logs'}/cache/${category}`;
+    let imgPath = `${process.cwd()+'/logs'}/cache/${category}/${localName}`;
+
+    let output = fallback;
+
+    await ensureExists(imgDir, {recursive: true}, function (){});
+
+    try {
+        output = await fs.promises.readFile(imgPath, "base64");
+    } catch {
+        if (url) {
+            try {
+                await saveImageToDisk(url, imgPath);
+                output = await fs.promises.readFile(imgPath, "base64");
+            } catch {
+                // Using fallback because no can download!
+            }
+        }
+    }
+
+    return output;
+}
+
+module.exports = { getTagValue, isTagTrue, loadImage, ensureExists }
