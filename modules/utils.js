@@ -28,16 +28,17 @@ function isTrue(value) {
     return false;
 }
 
-function ensureExists(path, mask, cb) {
-    if (typeof mask == 'function') {
-        cb = mask;
-        mask = 0o777;
-    }
-    fs.mkdir(path, mask, function(err) {
-        if (err) {
-            if (err.code === 'EEXIST') cb(null);
-            else cb(err);
-        } else cb(null);
+function ensureExists(path, mask) {
+    return new Promise((resolve, reject) => {
+        if (mask === undefined) {
+            mask = 0o777;
+        }
+        fs.mkdir(path, mask, function (err) {
+            if (err) {
+                if (err.code === 'EEXIST') resolve(null);
+                else reject(err);
+            } else resolve(null);
+        });
     });
 }
 
