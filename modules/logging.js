@@ -43,6 +43,9 @@ function push(message) {
         case 'SUBSCRIPTION_GIFT':
             msg = formatGiftSub(message);
             break;
+        case 'RESUBSCRIPTION':
+            msg = formatReSub(message);
+            break;
         default:
             break;
     }
@@ -114,6 +117,32 @@ function formatGiftSub(giftSub) {
         "tmiSentTs": giftSub.tags.tmiSentTs,
         "event": giftSub.event,
         "msgId": giftSub.msgId
+    };
+}
+
+function formatReSub(reSub) {
+    return {
+        "color": utils.getTagValue(reSub, 'color'),
+        "userInfo": {
+            "username": reSub.username,
+            "displayName": utils.getTagValue(reSub, 'displayName'),
+            "userId": utils.getTagValue(reSub, 'userId'),
+            "badges": utils.getTagValue(reSub, 'badges')
+        },
+        "subscriptionInfo": {
+            "cumulativeMonths": utils.getParameterValue(reSub, 'cumulativeMonths'),
+            "months": utils.getParameterValue(reSub, 'months'),
+            "multiMonthDuration": utils.getParameterValue(reSub, 'multimonthDuration'),
+            "multiMonthTenure": utils.getParameterValue(reSub, 'multimonthTenure'),
+            "streakMonths": utils.getParameterValue(reSub, 'streakMonths'),
+            "shouldShareStreak": utils.getParameterValue(reSub, 'shouldShareStreak'),
+            "subPlanName": utils.getParameterValue(reSub, 'subPlanName'),
+            "subPlan": utils.getParameterValue(reSub, 'subPlan'),
+            "wasGifted": utils.getParameterValue(reSub, 'wasGifted')
+        },
+        "tmiSentTs": utils.getTagValue(reSub, 'tmiSentTs'),
+        "event": reSub.event,
+        "msgId": utils.getTagValue(reSub, 'msgId')
     };
 }
 

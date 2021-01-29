@@ -9,8 +9,22 @@ function getTagValue(message, tag, subTag = null) {
     }
     return null;
 }
+
 function isTagTrue(message, tag, subTag = null) {
     return isTrue(getTagValue(message, tag, subTag));
+}
+
+function getParameterValue(message, parameter, subParameter = null) {
+    if (contains(message, 'parameters') && contains(message.parameters, parameter)) {
+        if (typeof subParameter == 'string') {
+            if (contains(message.parameters[parameter], subParameter)) return message.parameters[parameter][subParameter];
+        } else return message.parameters[parameter];
+    }
+    return null;
+}
+
+function isParameterTrue(message, parameter, subParameter = null) {
+    return isTrue(getParameterValue(message, parameter, subParameter));
 }
 
 function contains(obj, property) {
@@ -82,4 +96,4 @@ async function loadImage(url, localName, category, fallback) {
     return output;
 }
 
-module.exports = { getTagValue, isTagTrue, loadImage, ensureExists }
+module.exports = { getTagValue, isTagTrue, getParameterValue, isParameterTrue, loadImage, ensureExists }

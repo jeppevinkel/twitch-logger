@@ -49,6 +49,9 @@ function push(message) {
         case 'SUBSCRIPTION_GIFT':
             str = formatGiftSub(message);
             break;
+        case 'RESUBSCRIPTION':
+            str = formatReSub(message);
+            break;
         default:
             break;
     }
@@ -90,6 +93,16 @@ function formatGiftSub(giftSub) {
 
     // Message
     let systemMessage = utils.getTagValue(giftSub, 'systemMsg');
+
+    return `${meta} ***${systemMessage}***`;
+}
+
+function formatReSub(reSub) {
+    let dt = moment(parseInt(reSub.tags['tmiSentTs']));
+    let meta = `[${reSub.channel}][${dt.format('HH:mm')}]`;
+
+    // Message
+    let systemMessage = utils.getTagValue(reSub, 'systemMsg');
 
     return `${meta} ***${systemMessage}***`;
 }

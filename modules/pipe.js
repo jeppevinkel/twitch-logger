@@ -54,6 +54,12 @@ function push(message) {
         case 'FOLLOW':
             pushFollow(message);
             break;
+        case 'SUBSCRIPTION_GIFT':
+            pushGiftSub(message);
+            break;
+        case 'RESUBSCRIPTION':
+            pushReSub(message);
+            break;
         default:
             break;
     }
@@ -69,10 +75,10 @@ function pushMessage(message) {
     } else {
         avatar.generate(message.tags.displayName, message.tags.color, message.username).then(data => {
             utils.loadImage(message.profileImageUrl, `${message.tags.userId}.png`, "avatar", data).then(img => {
-                _websocket.send(JSON.stringify({ title: "Twitch-Logger", message: `${message.tags.displayName}: ${message.message}`, image: img}));
+                _websocket.send(JSON.stringify({ title: "Twitch-Logger", message: `${utils.getTagValue(message, 'displayName')}: ${message.message}`, image: img}));
             });
         }).catch(() => {
-            _websocket.send(JSON.stringify({ title: "Twitch-Logger", message: `${message.tags.displayName}: ${message.message}` }));
+            _websocket.send(JSON.stringify({ title: "Twitch-Logger", message: `${utils.getTagValue(message, 'displayName')}: ${message.message}` }));
         });
 
         //_websocket.send(JSON.stringify({ title: "Twitch-Logger", message: `${message.tags.displayName}: ${message.message}`, image: avatar}));
@@ -88,5 +94,36 @@ function pushFollow(follow) {
     _websocket.send(JSON.stringify({ title: "Twitch-Logger", message: `${follow.displayName} followed!` }));
 }
 
+function pushGiftSub(giftSub) {
+    var skip = false;
+    if (_config.muteBroadcaster && giftSub.tags.badges.hasOwnProperty('broadcaster')) skip = true;
+    if (skip) {
+        console.log(`Skipped message from: ${giftSub.tags.displayName}`);
+    } else {
+        avatar.generate(giftSub.tags.displayName, giftSub.tags.color, giftSub.username).then(data => {
+            utils.loadImage(giftSub.profileImageUrl, `${giftSub.tags.userId}.png`, "avatar", data).then(img => {
+                _websocket.send(JSON.stringify({ title: "Twitch-Logger", message: `${utils.getTagValue(giftSub, 'systemMsg')}`, image: img}));
+            });
+        }).catch(() => {
+            _websocket.send(JSON.stringify({ title: "Twitch-Logger", message: `${utils.getTagValue(giftSub, 'systemMsg')}` }));
+        });
+    }
+}
+
+function pushReSub(reSub) {
+    var skip = false;
+    if (_config.muteBroadcaster && reSub.tags.badges.hasOwnProperty('broadcaster')) skip = true;
+    if (skip) {
+        console.log(`Skipped message from: ${utils.getTagValue(reSub, 'displayName')}`);
+    } else {
+        avatar.generate(utils.getTagValue(reSub, 'displayName'), utils.getTagValue(reSub, 'color'), reSub.username).then(data => {
+            utils.loadImage(reSub.profileImageUrl, `${utils.getTagValue(reSub, 'userId')}.png`, "avatar", data).then(img => {
+                _websocket.send(JSON.stringify({ title: "Twitch-Logger", message: `${utils.getTagValue(reSub, 'systemMsg')}`, image: img}));
+            });
+        }).catch(() => {
+            _websocket.send(JSON.stringify({ title: "Twitch-Logger", message: `${utils.getTagValue(reSub, 'systemMsg')}` }));
+        });
+    }
+}
 
 module.exports = { init, push };

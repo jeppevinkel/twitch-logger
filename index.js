@@ -101,7 +101,7 @@ const run = async () => {
             setInterval(checkFollowers, 1000 * 10, channelStates[i].roomState.roomId);
         }
 
-        chat.on('PRIVMSG', async message => {
+        chat.on(TwitchJs.Events.ALL, async message => {
             if (api) {
                 message.profileImageUrl = (await api.get('users', {search: {'login': message.username}})).data[0]['profileImageUrl'];
             }
