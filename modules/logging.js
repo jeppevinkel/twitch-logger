@@ -150,6 +150,7 @@ function sendLog() {
     if (!Object.keys(_logs).length) return;
 
     let path = `${_rootFolder}/${moment().format("YYYY")}`;
+
     for (let channel in _logs) {
         if (!_logs[channel].length) continue;
         let fileName = `/${moment().format("YYYY-MM-DD")}_${channel.substring(1)}.json`;
