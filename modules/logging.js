@@ -47,7 +47,7 @@ function push(message) {
             msg = formatReSub(message);
             break;
         default:
-            break;
+            return;
     }
 
     if (_config.cache_emotes && msg.emotes != null) {
