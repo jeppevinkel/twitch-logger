@@ -150,37 +150,35 @@ function sendLog() {
     if (!Object.keys(_logs).length) return;
 
     let path = `${_rootFolder}/${moment().format("YYYY")}`;
-
     for (let channel in _logs) {
         if (!_logs[channel].length) continue;
         let fileName = `/${moment().format("YYYY-MM-DD")}_${channel.substring(1)}.json`;
-
-        utils.ensureExists(path, {recursive: true}, function (err) {
-            if (err) {
-                console.log(err);
-            } else {
-                fs.readFile(path + fileName, (err, data) => {
-                    if (err) {
-                        fs.writeFile(path + fileName, JSON.stringify(_logs[channel]), (err) => {
-                            if (err) {
-                                console.error(err)
-                            }
-                            _logs[channel] = [];
-                        });
-                    } else {
-                        let json = JSON.parse(data);
-                        json = json.concat(_logs[channel]);
-                        fs.writeFile(path + fileName, JSON.stringify(json), (err) => {
-                            if (err) {
-                                console.error(err)
-                            }
-                            _logs[channel] = [];
-                        });
-                    }
-                });
-            }
-        });
+        utils.ensureExists(path, {recursive: true})
+        .then(() => saveLogToDisk(path, fileName, channel))
+        .catch(err => console.log(`Error saving log: ${err.message}`));
     }
+}
+
+function saveLogToDisk(path, fileName, channel) {
+    fs.readFile(path + fileName, (err, data) => {
+        if (err) {
+            fs.writeFile(path + fileName, JSON.stringify(_logs[channel]), (err) => {
+                if (err) {
+                    console.error(err)
+                }
+                _logs[channel] = [];
+            });
+        } else {
+            let json = JSON.parse(data);
+            json = json.concat(_logs[channel]);
+            fs.writeFile(path + fileName, JSON.stringify(json), (err) => {
+                if (err) {
+                    console.error(err)
+                }
+                _logs[channel] = [];
+            });
+        }
+    });
 }
 
 function getEmoticonUrl(id) {

@@ -42,16 +42,13 @@ function isTrue(value) {
     return false;
 }
 
-function ensureExists(path, mask) {
+function ensureExists(path, mask=0o777) {
     return new Promise((resolve, reject) => {
-        if (mask === undefined) {
-            mask = 0o777;
-        }
         fs.mkdir(path, mask, function (err) {
             if (err) {
-                if (err.code === 'EEXIST') resolve(null);
+                if (err.code === 'EEXIST') resolve();
                 else reject(err);
-            } else resolve(null);
+            } else resolve();
         });
     });
 }
@@ -78,7 +75,7 @@ async function loadImage(url, localName, category, fallback) {
 
     let output = fallback;
 
-    await ensureExists(imgDir, {recursive: true}, function (){});
+    await ensureExists(imgDir, {recursive: true});
 
     try {
         output = await fs.promises.readFile(imgPath, "base64");
