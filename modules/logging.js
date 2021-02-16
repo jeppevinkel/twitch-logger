@@ -23,9 +23,9 @@ function stop() {
 }
 
 function pushRaw(message) {
+    if (!_config.enabled) return;
     if (!_logs[`${message.channel}_raw`]) _logs[`${message.channel}_raw`] = [];
     _logs[`${message.channel}_raw`].push(message);
-    return;
 }
 
 function push(message) {
