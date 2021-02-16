@@ -22,16 +22,15 @@ function stop() {
     if (_config.enabled) clearInterval(_interval);
 }
 
+function pushRaw(message) {
+    if (!_logs[`${message.channel}_raw`]) _logs[`${message.channel}_raw`] = [];
+    _logs[`${message.channel}_raw`].push(message);
+    return;
+}
+
 function push(message) {
     if (!_config.enabled) return;
     let msg;
-
-    if (message.logRaw) {
-
-        if (!_logs[`${message.channel}_raw`]) _logs[`${message.channel}_raw`] = [];
-        _logs[`${message.channel}_raw`].push(message);
-        return;
-    }
 
     switch (message.event) {
         case 'PRIVMSG':
@@ -186,4 +185,4 @@ function getEmoticonUrl(id) {
     return `https://static-cdn.jtvnw.net/emoticons/v1/${id}/1.0`;
 }
 
-module.exports = { init, start, stop, push };
+module.exports = { init, start, stop, push, pushRaw };
