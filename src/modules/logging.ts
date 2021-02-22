@@ -1,6 +1,14 @@
+import {
+    Message,
+    Messages,
+    PrivateMessage,
+    ResubscriptionParameters,
+    UserNoticeResubscriptionMessage, UserNoticeSubscriptionGiftMessage
+} from "twitch-js/lib";
+
 const fs = require('fs');
 const https = require('https');
-const moment = require('moment/moment.js');
+import * as moment from "moment";
 const utils = require('./utils.js');
 
 const _rootFolder = process.cwd()+'/logs';
@@ -8,33 +16,33 @@ let _config;
 let _logs = {};
 let _interval;
 
-function init(config) {
+export function init(config) {
     _config = config;
 }
 
-function start() {
+export function start() {
     if (_config.enabled) {
         _interval = setInterval(sendLog, _config.log_interval);
     }
 }
 
-function stop() {
+export function stop() {
     if (_config.enabled) clearInterval(_interval);
 }
 
-function pushRaw(message) {
+export function pushRaw(message) {
     if (!_config.enabled) return;
     if (!_logs[`${message.channel}_raw`]) _logs[`${message.channel}_raw`] = [];
     _logs[`${message.channel}_raw`].push(message);
 }
 
-function push(message) {
+export function push(message: any, profileImageUrl: string = undefined): void {
     if (!_config.enabled) return;
     let msg;
 
     switch (message.event) {
         case 'PRIVMSG':
-            msg = formatMessage(message);
+            msg = formatMessage(message, profileImageUrl);
             break;
         case 'FOLLOW':
             msg = formatFollow(message);
@@ -64,7 +72,7 @@ function push(message) {
     _logs[message.channel].push(msg);
 }
 
-function formatMessage(message) {
+function formatMessage(message: PrivateMessage, profileImageUrl: string = undefined) {
     return {
         "badges": message.tags.badges,
         "color": message.tags.color,
@@ -76,11 +84,11 @@ function formatMessage(message) {
         "tmiSentTs": message.tags.tmiSentTs,
         "userType": message.tags.userType,
         "username": message.username,
-        "userId": message.userId,
+        "userId": message.tags.userId,
         "event": message.event,
         "messageContent": message.message,
-        "profileImageUrl": message.profileImageUrl,
-        "msgId": message.msgId
+        "profileImageUrl": profileImageUrl,
+        "msgId": message.tags.msgId
     };
 }
 
@@ -92,7 +100,7 @@ function formatFollow(follow) {
     };
 }
 
-function formatGiftSub(giftSub) {
+function formatGiftSub(giftSub: UserNoticeSubscriptionGiftMessage) {
     return {
         "color": giftSub.tags.color,
         "senderInfo": {
@@ -102,12 +110,12 @@ function formatGiftSub(giftSub) {
             "badges": giftSub.tags.badges
         },
         "recipientInfo": {
-            "username": giftSub.parameters.recipientUserName,
+            "username": giftSub.parameters.recipientName,
             "displayName": giftSub.parameters.recipientDisplayName,
             "userId": giftSub.parameters.recipientId
         },
         "subscriptionInfo": {
-            "giftMonths": giftSub.parameters.giftMonths,
+            "giftMonths": giftSub.parameters.months,
             "months": giftSub.parameters.months,
             "subPlanName": giftSub.parameters.subPlanName,
             "subPlan": giftSub.parameters.subPlan
@@ -115,11 +123,11 @@ function formatGiftSub(giftSub) {
         "messageContent": giftSub.systemMessage,
         "tmiSentTs": giftSub.tags.tmiSentTs,
         "event": giftSub.event,
-        "msgId": giftSub.msgId
+        "msgId": giftSub.tags.msgId
     };
 }
 
-function formatReSub(reSub) {
+function formatReSub(reSub: UserNoticeResubscriptionMessage) {
     return {
         "color": utils.getTagValue(reSub, 'color'),
         "userInfo": {
@@ -185,4 +193,4 @@ function getEmoticonUrl(id) {
     return `https://static-cdn.jtvnw.net/emoticons/v1/${id}/1.0`;
 }
 
-module.exports = { init, start, stop, push, pushRaw };
+//module.exports = { init, start, stop, push, pushRaw };

@@ -1,12 +1,14 @@
 // Includes
-const TwitchJs = require('twitch-js');
-const moment = require("moment");
-const fs = require('fs');
-const fetch = require('node-fetch');
+import {Chat, Api} from 'twitch-js';
+import {Message, Messages, PrivateMessage, RoomStateTags, UserStateTags} from "twitch-js/lib";
 
-const config = require('./config.json');
+import * as moment from "moment";
+import fs from "fs"
+import fetch from "node-fetch"
+
+const config = require('../config.json');
 const discord = require('./modules/discord.js');
-const logging = require('./modules/logging.js');
+import * as logging from "./modules/logging";
 const pipe = require('./modules/pipe.js');
 
 let oauthInfo = {access_token: '', refresh_token: ''};
@@ -24,11 +26,11 @@ const onAuthenticationFailure = () =>
     fetch('https://id.twitch.tv/oauth2/token', {
         method: 'post',
         body: new URLSearchParams({
-                'grant_type': 'refresh_token',
-                'refresh_token': oauthInfo.refresh_token,
-                'client_id': config.twitch_authentication.client_id,
-                'client_secret': config.twitch_authentication.client_secret
-            })
+            'grant_type': 'refresh_token',
+            'refresh_token': oauthInfo.refresh_token,
+            'client_id': config.twitch_authentication.client_id,
+            'client_secret': config.twitch_authentication.client_secret
+        })
     }).then((response) => response.json()).then(json => {
         if (!json.error && json.status !== 400 && json.status !== 401) {
             oauthInfo.access_token = json.access_token;
@@ -45,7 +47,8 @@ const onAuthenticationFailure = () =>
     });
 
 const run = async () => {
-    let chat, api;
+    let chat: Chat;
+    let api: Api;
     if (config.twitch_authentication.enabled) {
         try {
             oauthInfo = JSON.parse(fs.readFileSync('./tokens.json', 'utf-8'));
@@ -60,7 +63,7 @@ const run = async () => {
             return;
         }
 
-        chat = new TwitchJs.Chat({
+        chat = new Chat({
             token: oauthInfo.access_token,
             username: config.twitch_authentication.username,
             onAuthenticationFailure: onAuthenticationFailure,
@@ -68,17 +71,17 @@ const run = async () => {
         });
     }
     else {
-        chat = new TwitchJs.Chat({log: {level: config.logging_level}});
+        chat = new Chat({log: {level: config.logging_level}});
     }
 
     // Initialize loops upon connecting
-    chat.on(TwitchJs.Chat.Events.CONNECTED, event => {
+    chat.on(Chat.Events.CONNECTED, event => {
         console.log("################  CONNECTED TO TWITCH  ################");
         discord.start();
         logging.start();
 
         if (config.twitch_authentication.enabled) {
-            api = new TwitchJs.Api({
+            api = new Api({
                 token: oauthInfo.access_token,
                 clientId: config.twitch_authentication.client_id,
                 log: {level: config.logging_level}
@@ -87,7 +90,7 @@ const run = async () => {
     });
 
     // Stop loops when disconnecting
-    chat.on(TwitchJs.Chat.Events.DISCONNECTED, event => {
+    chat.on(Chat.Events.DISCONNECTED, () => {
         console.log("################  DISCONNECTED FROM TWITCH  ################");
         discord.stop();
         logging.stop();
@@ -95,20 +98,23 @@ const run = async () => {
 
     await chat.connect();
 
-    Promise.all(config.twitch_channels.map(channel => chat.join(channel))).then(channelStates => {
+    let testGiftSub =
+
+    Promise.all<{roomState: RoomStateTags, userState: UserStateTags}>(config.twitch_channels.map(channel => chat.join(channel))).then(channelStates => {
         for (let i = 0; i < channelStates.length; i++) {
             followers[channelStates[i].roomState.roomId] = [];
             setInterval(checkFollowers, 1000 * 10, channelStates[i].roomState.roomId);
         }
 
-        chat.on(TwitchJs.Events.ALL, async message => {
+        chat.on(Chat.Events.ALL, async (message: PrivateMessage) => {
+            let profileImageUrl: string = undefined;
             if (api) {
-                message.profileImageUrl = (await api.get('users', {search: {'login': message.username}})).data[0]['profileImageUrl'];
+                profileImageUrl = (await api.get('users', {search: {'login': message.username}})).data[0]['profileImageUrl'];
             }
 
             pipe.push(message);
             discord.push(message);
-            logging.push(message);
+            logging.push(message, profileImageUrl);
             if(config.log_raw) logging.pushRaw(message);
         });
     });
