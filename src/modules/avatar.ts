@@ -1,9 +1,10 @@
-const { createCanvas } = require('canvas');
+import { createCanvas } from "canvas";
+
 const _canvas = createCanvas(256, 256);
 const _ctx = _canvas.getContext('2d');
 const _avatarCache = {};
 
-async function generate(name, color, user) {
+export async function generate(name, color, user) {
     if (_avatarCache.hasOwnProperty(user)) {
         _avatarCache[user].lastUsed = Date.now();
         return _avatarCache[user].data;
@@ -43,12 +44,10 @@ async function generate(name, color, user) {
     }
 }
 
-function clearCache() {
+export function clearCache() {
     for (let avatar in _avatarCache) {
         if ((Date.now() - _avatarCache[avatar].lastUsed) < 60 * 60 * 1000) {
             delete _avatarCache[avatar];
         }
     }
 }
-
-module.exports = { generate, clearCache }

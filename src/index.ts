@@ -7,9 +7,9 @@ import fs from "fs"
 import fetch from "node-fetch"
 
 const config = require('../config.json');
-const discord = require('./modules/discord.js');
-import * as logging from "./modules/logging";
-const pipe = require('./modules/pipe.js');
+import * as discord from './modules/discord';
+import * as logging from './modules/logging';
+import * as pipe from './modules/pipe';
 
 let oauthInfo = {access_token: '', refresh_token: ''};
 
@@ -97,8 +97,6 @@ const run = async () => {
     });
 
     await chat.connect();
-
-    let testGiftSub =
 
     Promise.all<{roomState: RoomStateTags, userState: UserStateTags}>(config.twitch_channels.map(channel => chat.join(channel))).then(channelStates => {
         for (let i = 0; i < channelStates.length; i++) {

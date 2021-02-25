@@ -4,7 +4,8 @@
   "description": "A bot to help log the Twitch chat as well as potentially pushing notifications.",
   "main": "dist/index.js",
   "scripts": {
-    "start": "tsc && node dist/index.js"
+    "start": "tsc && node dist/index.js",
+    "update-logs": "tsc && node dist/log-updater/index.js"
   },
   "keywords": [],
   "author": "",

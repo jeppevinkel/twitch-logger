@@ -6,10 +6,10 @@ import {
     UserNoticeResubscriptionMessage, UserNoticeSubscriptionGiftMessage
 } from "twitch-js/lib";
 
-const fs = require('fs');
-const https = require('https');
+import fs from 'fs';
+import https from 'https';
 import * as moment from "moment";
-const utils = require('./utils.js');
+import * as utils from './utils';
 
 const _rootFolder = process.cwd()+'/logs';
 let _config;
@@ -177,7 +177,8 @@ function saveLogToDisk(path, fileName, channel) {
                 _logs[channel] = [];
             });
         } else {
-            let json = JSON.parse(data);
+            // let json = JSON.parse(data);
+            let json = JSON.parse(data.toString());
             json = json.concat(_logs[channel]);
             fs.writeFile(path + fileName, JSON.stringify(json), (err) => {
                 if (err) {
