@@ -1,5 +1,5 @@
-import fs from 'fs';
-import https from 'https';
+import * as fs from 'fs';
+import * as https from 'https';
 
 export function getTagValue(message, tag, subTag = null) {
     if (contains(message, 'tags') && contains(message.tags, tag)) {
@@ -91,4 +91,8 @@ export async function loadImage(url, localName, category, fallback) {
     }
 
     return output;
+}
+
+export function getEmoticonUrl(id) {
+    return `https://static-cdn.jtvnw.net/emoticons/v1/${id}/1.0`;
 }

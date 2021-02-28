@@ -3,8 +3,8 @@ import {Chat, Api} from 'twitch-js';
 import {Message, Messages, PrivateMessage, RoomStateTags, UserStateTags} from "twitch-js/lib";
 
 import * as moment from "moment";
-import fs from "fs"
-import fetch from "node-fetch"
+import * as fs from "fs";
+import * as fetch from "node-fetch";
 
 const config = require('../config.json');
 import * as discord from './modules/discord';

@@ -6,8 +6,7 @@ import {
     UserNoticeResubscriptionMessage, UserNoticeSubscriptionGiftMessage
 } from "twitch-js/lib";
 
-import fs from 'fs';
-import https from 'https';
+import * as fs from 'fs';
 import * as moment from "moment";
 import * as utils from './utils';
 

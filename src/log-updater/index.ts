@@ -1,5 +1,5 @@
 import { readdir, stat, readFile, writeFile } from 'fs/promises';
-import {join} from 'path';
+import { join } from 'path';
 
 const logsRoot = join(__dirname, "../logs");
 
