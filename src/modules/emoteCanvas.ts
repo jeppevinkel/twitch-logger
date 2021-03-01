@@ -47,7 +47,6 @@ export async function drawTwitchMessage(ctx: CanvasRenderingContext2D, pos: IRec
             continue;
         }
 
-        console.log(words[i] + ", " + xPos + ", " + lineY);
         ctx.fillText(words[i], xPos, lineY);
 
         xPos += wordsWidth + wordSpacing;

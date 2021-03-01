@@ -9,6 +9,7 @@ import {
 import * as fs from 'fs';
 import * as moment from "moment";
 import * as utils from './utils';
+import {IMessage} from "./typeDefinitions";
 
 const _rootFolder = process.cwd()+'/logs';
 let _config;
@@ -71,16 +72,16 @@ export function push(message: any, profileImageUrl: string = undefined): void {
     _logs[message.channel].push(msg);
 }
 
-function formatMessage(message: PrivateMessage, profileImageUrl: string = undefined) {
+export function formatMessage(message: PrivateMessage, profileImageUrl: string = undefined) {
     return {
         "badges": message.tags.badges,
         "color": message.tags.color,
         "displayName": message.tags.displayName,
         "emotes": message.tags.emotes,
-        "flags": message.tags.flags,
+        "flags": message.tags.flags as string,
         "mod": (message.tags.mod === "1"),
         "subscriber": message.tags.subscriber === "1",
-        "tmiSentTs": message.tags.tmiSentTs,
+        "tmiSentTs": message.tags.tmiSentTs as string,
         "userType": message.tags.userType,
         "username": message.username,
         "userId": message.tags.userId,
@@ -162,7 +163,7 @@ function sendLog() {
         let fileName = `/${moment().format("YYYY-MM-DD")}_${channel.substring(1)}.json`;
         utils.ensureExists(path, {recursive: true})
         .then(() => saveLogToDisk(path, fileName, channel))
-        .catch(err => console.log(`Error saving log: ${err.message}`));
+        .catch(err => console.log(`[LOGGING] Error saving log: ${err.message}`));
     }
 }
 
@@ -171,7 +172,7 @@ function saveLogToDisk(path, fileName, channel) {
         if (err) {
             fs.writeFile(path + fileName, JSON.stringify(_logs[channel]), (err) => {
                 if (err) {
-                    console.error(err)
+                    console.error("[LOGGING]" + err)
                 }
                 _logs[channel] = [];
             });
@@ -181,7 +182,7 @@ function saveLogToDisk(path, fileName, channel) {
             json = json.concat(_logs[channel]);
             fs.writeFile(path + fileName, JSON.stringify(json), (err) => {
                 if (err) {
-                    console.error(err)
+                    console.error("[LOGGING]" + err)
                 }
                 _logs[channel] = [];
             });

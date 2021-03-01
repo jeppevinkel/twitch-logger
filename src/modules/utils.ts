@@ -1,5 +1,6 @@
 import * as fs from 'fs';
 import * as https from 'https';
+import {Canvas, CanvasRenderingContext2D, Image} from "canvas";
 
 export function getTagValue(message, tag, subTag = null) {
     if (contains(message, 'tags') && contains(message.tags, tag)) {
@@ -95,4 +96,15 @@ export async function loadImage(url, localName, category, fallback) {
 
 export function getEmoticonUrl(id) {
     return `https://static-cdn.jtvnw.net/emoticons/v1/${id}/1.0`;
+}
+
+export function drawRoundedImage(ctx: CanvasRenderingContext2D, image: Canvas | Image, dx: number, dy: number, dw: number, dh: number) {
+    ctx.save();
+    ctx.beginPath();
+    ctx.arc(dx, dy, (dw > dh ? dh : dw)/2, 0, 2 * Math.PI);
+    ctx.closePath();
+
+    ctx.clip();
+    ctx.drawImage(image, dx - dw/2, dy - dh/2, dw, dh);
+    ctx.restore();
 }

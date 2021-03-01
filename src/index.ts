@@ -10,6 +10,7 @@ const config = require('../config.json');
 import * as discord from './modules/discord';
 import * as logging from './modules/logging';
 import * as pipe from './modules/pipe';
+import * as customPipe from './modules/customPipe';
 
 let oauthInfo = {access_token: '', refresh_token: ''};
 
@@ -19,6 +20,7 @@ let botStartTime = moment.now();
 
 
 pipe.init(config.open_vr_notification_pipe);
+customPipe.init(config.open_vr_notification_pipe);
 discord.init(config.discord_integration);
 logging.init(config.local_files);
 
@@ -111,6 +113,7 @@ const run = async () => {
             }
 
             pipe.push(message);
+            customPipe.push(message);
             discord.push(message);
             logging.push(message, profileImageUrl);
             if(config.log_raw) logging.pushRaw(message);
@@ -140,6 +143,7 @@ const run = async () => {
                 }
                 for (const followerToPush of followersToPush) {
                     pipe.push(followerToPush);
+                    customPipe.push(followerToPush);
                     discord.push(followerToPush);
                     logging.push(followerToPush);
                 }

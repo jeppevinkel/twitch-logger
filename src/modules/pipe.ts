@@ -5,12 +5,14 @@ import * as utils from './utils';
 let _websocket;
 let _clearCacheInterval;
 let _config;
+let _enabled = false;
 
 export function init(config) {
     _config = config;
+    _enabled = _config.enabled && !_config.custom;
 
     let active = false;
-    if(_config.enabled) connectLoop();
+    if(_enabled) connectLoop();
 
     function connectLoop()
     {
@@ -27,25 +29,25 @@ export function init(config) {
     function onOpen(evt)
     {
         active = true;
-        console.log("Started clearCacheInterval");
+        console.log("[PIPE] Started clearCacheInterval");
         _clearCacheInterval = setInterval(avatar.clearCache, 60 * 60 * 1000);
     }
 
     function onClose(evt)
     {
         active = false;
-        console.log("Stopped clearCacheInterval");
+        console.log("[PIPE] Stopped clearCacheInterval");
         clearInterval(_clearCacheInterval);
         avatar.clearCache();
     }
 
     function onError(evt) {
-        console.log("ERROR: "+JSON.stringify(evt, null, 2));
+        console.log("[PIPE] ERROR: "+JSON.stringify(evt, null, 2));
     }
 }
 
 export function push(message) {
-    if(!_config.enabled) return;
+    if(!_enabled) return;
 
     switch (message.event) {
         case 'PRIVMSG':
@@ -71,7 +73,7 @@ function pushMessage(message) {
     _config.ignoreUsers.forEach(function (user) { if (message.tags.username.toLowerCase() == user.toLowerCase()) skip = true; });
     _config.ignorePrefixes.forEach(function (prefix) { if (message.message.indexOf(prefix) == 0) skip = true; });
     if (skip) {
-        console.log(`Skipped message from: ${message.tags.displayName}`);
+        console.log(`[PIPE] Skipped message from: ${message.tags.displayName}`);
     } else {
         avatar.generate(message.tags.displayName, message.tags.color, message.username).then(data => {
             utils.loadImage(message.profileImageUrl, `${message.tags.userId}.png`, "avatar", data).then(img => {
