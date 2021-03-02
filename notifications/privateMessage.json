@@ -11,7 +11,7 @@
       "height": 129
     },
     "avatar": {
-      "rounded": false,
+      "rounded": true,
       "x": 64,
       "y": 64,
       "width": 110,
@@ -31,7 +31,7 @@
       "horizontal": true,
       "channel": 0,
       "hz": -1,
-      "duration": 2000,
+      "duration": 4000,
       "width": 1,
       "distance": 1.3,
       "pitch": -36,

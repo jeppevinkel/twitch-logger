@@ -21,7 +21,7 @@ export async function drawTwitchMessage(ctx: CanvasRenderingContext2D, pos: IRec
     let line = 0;
     let xPos = pos.x;
     for (let i = 0; i < words.length; i++) {
-        const wordsWidth = nextEmote.start == index ? emoteSize : ctx.measureText(words[i]).width;
+        const wordsWidth = nextEmote?.start == index ? emoteSize : ctx.measureText(words[i]).width;
         if (xPos + wordsWidth > pos.x + pos.width) {
             line++;
             xPos = pos.x;
@@ -29,7 +29,7 @@ export async function drawTwitchMessage(ctx: CanvasRenderingContext2D, pos: IRec
 
         const lineY = pos.y + emoteSize + (emoteSize * 1.1) * line;
 
-        if (nextEmote.start == index) {
+        if (nextEmote?.start == index) {
             let image = await new Promise(async (resolve, reject) => {
                 const img = new Image();
                 img.onload = () => resolve(img);
