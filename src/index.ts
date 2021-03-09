@@ -116,7 +116,7 @@ const run = async () => {
             }
 
             pipe.push(message);
-            customPipe.push(message);
+            customPipe.push(message, profileImageUrl);
             discord.push(message);
             logging.push(message, profileImageUrl);
             if(config.log_raw) logging.pushRaw(message);

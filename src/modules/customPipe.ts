@@ -7,6 +7,7 @@ import {drawTwitchMessage} from "./emoteCanvas";
 import {formatGiftSub, formatMessage} from "./logging";
 import {drawRoundedImage} from "./utils";
 import * as testing from "./testing";
+import {PrivateMessage} from "twitch-js/lib";
 const privateMessageConfig = require('../../notifications/privateMessage.json');
 const followConfig = require('../../notifications/follow.json');
 
@@ -58,12 +59,12 @@ export function init(config) {
     }
 }
 
-export function push(message) {
+export function push(message, profileImageUrl: string = undefined) {
     if(!_enabled) return;
 
     switch (message.event) {
         case 'PRIVMSG':
-            pushMessage(message);
+            pushMessage(message, profileImageUrl);
             break;
         case 'FOLLOW':
             pushFollow(message);
@@ -79,7 +80,7 @@ export function push(message) {
     }
 }
 
-async function pushMessage(message) {
+async function pushMessage(message, profileImageUrl: string = undefined) {
     var skip = false;
     if (_config.muteBroadcaster && message.tags.badges.hasOwnProperty('broadcaster')) skip = true;
     _config.ignoreUsers.forEach(function (user) { if (message.tags.username.toLowerCase() == user.toLowerCase()) skip = true; });
@@ -98,7 +99,7 @@ async function pushMessage(message) {
         ctx.font = privateMessageConfig.message.font;
 
         avatar.generate(message.tags.displayName, message.tags.color, message.username).then(data => {
-            utils.loadImage(message.profileImageUrl, `${message.tags.userId}.png`, "avatar", data).then(img => {
+            utils.loadImage(profileImageUrl, `${message.tags.userId}.png`, "avatar", data).then(img => {
                 let formattedMessage = formatMessage(message, null) as IMessage;
                 drawTwitchMessage(ctx, privateMessageConfig.message.message_box as IRect, privateMessageConfig.message.emote_size, formattedMessage).then( () => {
 
