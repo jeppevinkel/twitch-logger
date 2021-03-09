@@ -64,6 +64,32 @@ export interface IRawMessage {
     }
 }
 
+export interface IGiftSub {
+    "color": string,
+    "senderInfo": {
+        "username": string,
+        "displayName": string,
+        "userId": string,
+        "badges": object[]
+    },
+    "recipientInfo": {
+        "username": string,
+        "displayName": string,
+        "userId": string
+    },
+    "subscriptionInfo": {
+        "giftMonths": string,
+        "months": number,
+        "subPlanName": string,
+        "subPlan": string
+    },
+    "messageContent": string,
+    "emotes": IEmote[],
+    "tmiSentTs": string,
+    "event": string,
+    "msgId": string
+}
+
 export interface ICustomNotification {
     custom: boolean,
     image: string,

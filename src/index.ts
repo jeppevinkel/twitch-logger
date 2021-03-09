@@ -11,6 +11,7 @@ import * as discord from './modules/discord';
 import * as logging from './modules/logging';
 import * as pipe from './modules/pipe';
 import * as customPipe from './modules/customPipe';
+import * as testing from './modules/testing';
 
 let oauthInfo = {access_token: '', refresh_token: ''};
 
@@ -49,6 +50,8 @@ const onAuthenticationFailure = () =>
     });
 
 const run = async () => {
+    // return;
+
     let chat: Chat;
     let api: Api;
     if (config.twitch_authentication.enabled) {

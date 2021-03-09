@@ -1,6 +1,8 @@
 import * as WebSocket from 'ws';
 import * as avatar from './avatar';
 import * as utils from './utils';
+import * as customPipe from "./customPipe";
+import * as testing from "./testing";
 
 let _websocket;
 let _clearCacheInterval;

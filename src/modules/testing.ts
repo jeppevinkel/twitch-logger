@@ -1,3 +1,4 @@
+import * as moment from "moment";
 
 
 export function generateMessage(moderator = false) {
@@ -31,6 +32,16 @@ export function generateMessage(moderator = false) {
             "username": "somedude43",
             "isModerator": false
         }
+    }
+}
+
+export function generateFollow() {
+    return {
+        "event": 'FOLLOW',
+        "timestamp": moment().unix(),
+        "displayName": "somedude43",
+        "userId": "47214462",
+        "channel": "#randomchannel21"
     }
 }
 

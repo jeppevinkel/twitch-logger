@@ -92,7 +92,7 @@ export function formatMessage(message: PrivateMessage, profileImageUrl: string =
     };
 }
 
-function formatFollow(follow) {
+export function formatFollow(follow) {
     return {
         "displayName": follow.displayName,
         "tmiSentTs": follow.timestamp,
@@ -100,7 +100,7 @@ function formatFollow(follow) {
     };
 }
 
-function formatGiftSub(giftSub: UserNoticeSubscriptionGiftMessage) {
+export function formatGiftSub(giftSub: UserNoticeSubscriptionGiftMessage) {
     return {
         "color": giftSub.tags.color,
         "senderInfo": {
@@ -121,13 +121,14 @@ function formatGiftSub(giftSub: UserNoticeSubscriptionGiftMessage) {
             "subPlan": giftSub.parameters.subPlan
         },
         "messageContent": giftSub.systemMessage,
+        "emotes": giftSub.tags.emotes,
         "tmiSentTs": giftSub.tags.tmiSentTs,
         "event": giftSub.event,
         "msgId": giftSub.tags.msgId
     };
 }
 
-function formatReSub(reSub: UserNoticeResubscriptionMessage) {
+export function formatReSub(reSub: UserNoticeResubscriptionMessage) {
     return {
         "color": utils.getTagValue(reSub, 'color'),
         "userInfo": {
