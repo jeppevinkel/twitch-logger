@@ -62,6 +62,9 @@ export function push(message: any, profileImageUrl: string = undefined): void {
         for (const emotesKey in msg.emotes) {
             let imgName = `/${msg.emotes[emotesKey].id}.png`;
             utils.loadImage(getEmoticonUrl(msg.emotes[emotesKey].id), `${msg.emotes[emotesKey].id}.png`, 'emotes', null)
+                .catch(err => {
+                    console.log(`[Error] ${err}`);
+                })
             // ensureExists(imgPath, {recursive: true}, function (err) {
             //     saveImageToDisk(getEmoticonUrl(msg.emotes[emotesKey].id), imgPath + imgName);
             // });

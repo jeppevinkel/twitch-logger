@@ -76,7 +76,11 @@ export async function loadImage(url, localName, category, fallback) {
 
     let output = fallback;
 
-    await ensureExists(imgDir, {recursive: true});
+    try {
+        await ensureExists(imgDir, {recursive: true});
+    } catch (err) {
+        console.log(`[Error] ${err}`);
+    }
 
     try {
         output = await fs.promises.readFile(imgPath, "base64");
@@ -84,9 +88,13 @@ export async function loadImage(url, localName, category, fallback) {
         if (url) {
             try {
                 await saveImageToDisk(url, imgPath);
-                output = await fs.promises.readFile(imgPath, "base64");
-            } catch {
-                // Using fallback because no can download!
+                try {
+                    output = await fs.promises.readFile(imgPath, "base64");
+                } catch (err) {
+                    console.log(`[Error] ${err}`);
+                }
+            } catch (err) {
+                console.log(`[Error] ${err}`);
             }
         }
     }

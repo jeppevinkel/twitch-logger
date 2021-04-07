@@ -170,7 +170,7 @@ async function pushFollow(follow) {
     // ctx.strokeRect(msgBox.x-4, msgBox.y-4, msgBox.width+8, msgBox.height+8)
     ctx.rect(msgBox.x-4, msgBox.y-4, msgBox.width+8, msgBox.height+8);
 
-    let txtMeasure = ctx.measureText("Jopo");
+    let txtMeasure = ctx.measureText(follow.displayName);
 
     // console.log(txtMeasure.actualBoundingBoxDescent);
     // console.log(txtMeasure.actualBoundingBoxAscent);
@@ -178,9 +178,9 @@ async function pushFollow(follow) {
     ctx.clip();
     if (followConfig.message.message_box.center) {
         ctx.textAlign = 'center';
-        ctx.fillText("Jopo", msgBox.x + msgBox.width/2, msgBox.y + msgBox.height/2 + (txtMeasure.actualBoundingBoxAscent)/2);
+        ctx.fillText(follow.displayName, msgBox.x + msgBox.width/2, msgBox.y + msgBox.height/2 + (txtMeasure.actualBoundingBoxAscent)/2);
     } else {
-        ctx.fillText("Jopo", msgBox.x, msgBox.y + msgBox.height/2 + (txtMeasure.actualBoundingBoxAscent)/2);
+        ctx.fillText(follow.displayName, msgBox.x, msgBox.y + msgBox.height/2 + (txtMeasure.actualBoundingBoxAscent)/2);
     }
     ctx.restore();
 
