@@ -82,7 +82,7 @@ function formatMessage(message) {
 
 function formatFollow(follow) {
     let dt = moment(parseInt(follow['timestamp']));
-    let meta = `[#${follow.channel}][${dt.format('HH:mm')}]`;
+    let meta = `[${follow.channel}][${dt.format('HH:mm')}]`;
 
     return `${meta} ***${follow.displayName} is now following!***`;
 }

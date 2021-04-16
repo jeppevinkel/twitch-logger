@@ -52,6 +52,12 @@ const onAuthenticationFailure = () =>
 const run = async () => {
     // return;
 
+    // let dt = moment("2021-04-16T19:34:44Z");
+    // let dtU = dt.valueOf();
+    // console.log(dt.format('HH:mm'));
+    // console.log(moment.unix(dtU).format('HH:mm'));
+    // console.log(moment(dtU).format('HH:mm'));
+
     let chat: Chat;
     let api: Api;
     if (config.twitch_authentication.enabled) {
@@ -135,9 +141,10 @@ const run = async () => {
                     while (followers[channelId].length > 100) {
                         followers[channelId].shift();
                     }
+
                     let followData = {
                         event: 'FOLLOW',
-                        timestamp: moment(relevantFollower.followedAt).unix(),
+                        timestamp: moment(relevantFollower.followedAt).valueOf(),
                         displayName: relevantFollower.fromName,
                         userId: relevantFollower.fromId,
                         channel: `#${relevantFollower.toName}`
