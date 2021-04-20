@@ -1,7 +1,7 @@
 import {
     Message,
     Messages,
-    PrivateMessage,
+    PrivateMessage, PrivateMessageWithBits,
     ResubscriptionParameters,
     UserNoticeResubscriptionMessage, UserNoticeSubscriptionGiftMessage
 } from "twitch-js/lib";
@@ -52,6 +52,9 @@ export function push(message: any, profileImageUrl: string = undefined): void {
             break;
         case 'RESUBSCRIPTION':
             msg = formatReSub(message);
+            break;
+        case 'CHEER':
+            msg = formatCheer(message, profileImageUrl);
             break;
         default:
             return;
@@ -154,6 +157,27 @@ export function formatReSub(reSub: UserNoticeResubscriptionMessage) {
         "tmiSentTs": utils.getTagValue(reSub, 'tmiSentTs'),
         "event": reSub.event,
         "msgId": utils.getTagValue(reSub, 'msgId')
+    };
+}
+
+export function formatCheer(cheer: PrivateMessageWithBits, profileImageUrl: string = undefined) {
+    return {
+        "badges": cheer.tags.badges,
+        "color": cheer.tags.color,
+        "displayName": cheer.tags.displayName,
+        "emotes": cheer.tags.emotes,
+        "flags": cheer.tags.flags as string,
+        "mod": (cheer.tags.mod === "1"),
+        "subscriber": cheer.tags.subscriber === "1",
+        "tmiSentTs": cheer.tags.tmiSentTs as string,
+        "userType": cheer.tags.userType,
+        "username": cheer.username,
+        "userId": cheer.tags.userId,
+        "event": cheer.event,
+        "messageContent": cheer.message,
+        "profileImageUrl": profileImageUrl,
+        "msgId": cheer.tags.msgId,
+        "bits": cheer.bits
     };
 }
 

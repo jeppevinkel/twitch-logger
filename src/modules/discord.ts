@@ -52,6 +52,9 @@ export function push(message) {
         case 'RESUBSCRIPTION':
             str = formatReSub(message);
             break;
+        case 'CHEER':
+            str = formatCheer(message);
+            break;
         default:
             break;
     }
@@ -105,4 +108,31 @@ function formatReSub(reSub) {
     let systemMessage = utils.getTagValue(reSub, 'systemMsg');
 
     return `${meta} ***${systemMessage}***`;
+}
+
+function formatCheer(cheer) {
+    let dt = moment(parseInt(cheer.tags['tmiSentTs']));
+    let meta = `[${cheer.channel}][${dt.format('HH:mm')}]`;
+
+    // Checks
+    let isBroadcaster = utils.isTagTrue(cheer, 'badges', 'broadcaster');
+    let isFounder = utils.getTagValue(cheer, 'badges', 'founder');
+    let isSub = _config.subscriber_badge.enabled && (isFounder || isBroadcaster || utils.isTagTrue(cheer, 'subscriber'));
+
+    // Badges
+    let subBadge = isSub ? `[${_config.subscriber_badge.emoji}]`:'';
+    let modBadge = utils.isTagTrue(cheer, 'mod') ? '[🛡️]':'';
+    let broadcasterBadge = isBroadcaster ? '[📣]':'';
+
+    // Name
+    let displayName = utils.getTagValue(cheer, 'displayName');
+    if(isBroadcaster) displayName = `**${displayName}**`; // Bold broadcaster
+
+    // Cheering announement
+    let cheerAnnouncement = `${meta} ***${displayName} cheered with ${cheer.bits} bits!***`;
+
+    // Message
+    let message = `${meta} ${subBadge}${modBadge}${broadcasterBadge} ${displayName}: ${cheer.message}`;
+
+    return `${cheerAnnouncement}\n${message}`;
 }

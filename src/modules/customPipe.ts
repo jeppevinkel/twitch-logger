@@ -1,15 +1,16 @@
 import * as WebSocket from 'ws';
 import * as avatar from './avatar';
 import * as utils from './utils';
-import {ICustomNotification, IGiftSub, IMessage, IRect} from "./typeDefinitions";
+import {ICheer, ICustomNotification, IGiftSub, IMessage, IRect} from "./typeDefinitions";
 import {createCanvas, Image, loadImage, PNGStream} from "canvas";
 import {drawTwitchMessage} from "./emoteCanvas";
-import {formatGiftSub, formatMessage} from "./logging";
+import {formatCheer, formatGiftSub, formatMessage} from "./logging";
 import {drawRoundedImage} from "./utils";
 import * as testing from "./testing";
 import {PrivateMessage} from "twitch-js/lib";
 const privateMessageConfig = require('../../notifications/privateMessage.json');
 const followConfig = require('../../notifications/follow.json');
+const cheerConfig = require('../../notifications/cheer.json');
 
 let _websocket;
 let _clearCacheInterval;
@@ -74,6 +75,9 @@ export function push(message, profileImageUrl: string = undefined) {
             break;
         case 'RESUBSCRIPTION':
             pushReSub(message);
+            break;
+        case 'CHEER':
+            pushCheer(message, profileImageUrl);
             break;
         default:
             break;
@@ -287,6 +291,84 @@ function pushReSub(reSub) {
             });
         }).catch(() => {
             _websocket.send(JSON.stringify({ title: "Twitch-Logger", message: `${utils.getTagValue(reSub, 'systemMsg')}` }));
+        });
+    }
+}
+
+async function pushCheer(cheer, profileImageUrl: string = undefined) {
+    var skip = false;
+    if (_config.muteBroadcaster && cheer.tags.badges.hasOwnProperty('broadcaster')) skip = true;
+    _config.ignoreUsers.forEach(function (user) { if (cheer.tags.username.toLowerCase() == user.toLowerCase()) skip = true; });
+    _config.ignorePrefixes.forEach(function (prefix) { if (cheer.message.indexOf(prefix) == 0) skip = true; });
+    if (skip) {
+        console.log(`[PIPE] Skipped message from: ${cheer.tags.displayName}`);
+    } else {
+        let msgValues: ICustomNotification = cheerConfig.style;
+        msgValues.custom = true;
+
+        const bg = await loadImage(cheerConfig.message.background);
+        const canvas = createCanvas(bg.width, bg.height);
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(bg, 0, 0);
+        ctx.fillStyle = cheerConfig.message.fill_style;
+        ctx.font = cheerConfig.message.font;
+
+        avatar.generate(cheer.tags.displayName, cheer.tags.color, cheer.username).then(data => {
+            utils.loadImage(profileImageUrl, `${cheer.tags.userId}.png`, "avatar", data).then(img => {
+                let formattedMessage = formatCheer(cheer, null) as ICheer;
+                drawTwitchMessage(ctx, cheerConfig.message.message_box as IRect, cheerConfig.message.emote_size, formattedMessage).then( () => {
+
+                    new Promise<Image>(async (resolve, reject) => {
+                        const _img = new Image();
+                        _img.onload = () => resolve(_img);
+                        _img.onerror = reject;
+                        _img.src = new Buffer(img, 'base64');
+                    }).then(im => {
+                        if (cheerConfig.message.avatar.rounded) {
+                            drawRoundedImage(ctx,
+                                im,
+                                cheerConfig.message.avatar.x,
+                                cheerConfig.message.avatar.y,
+                                cheerConfig.message.avatar.width,
+                                cheerConfig.message.avatar.height);
+                        }
+                        else {
+                            ctx.drawImage(im,
+                                cheerConfig.message.avatar.x - (cheerConfig.message.avatar.width/2),
+                                cheerConfig.message.avatar.y - (cheerConfig.message.avatar.height/2),
+                                cheerConfig.message.avatar.width,
+                                cheerConfig.message.avatar.height);
+                        }
+
+                        ctx.save();
+                        ctx.fillStyle = cheerConfig.message.name_display.fill_style;
+                        ctx.font = cheerConfig.message.name_display.font;
+                        ctx.fillText(formattedMessage.displayName, cheerConfig.message.name_display.x, cheerConfig.message.name_display.y);
+                        ctx.restore();
+
+                        ctx.save();
+                        ctx.fillStyle = cheerConfig.message.bits_display.fill_style;
+                        ctx.font = cheerConfig.message.bits_display.font;
+                        if (cheerConfig.message.bits_display.center) ctx.textAlign = 'center';
+                        ctx.textBaseline = 'middle';
+                        ctx.fillText(String(formattedMessage.bits), cheerConfig.message.bits_display.x, cheerConfig.message.bits_display.y);
+                        ctx.restore();
+
+                        msgValues.image = canvas.toDataURL().split(',')[1];
+
+                        _websocket.send(JSON.stringify(msgValues));
+                    });
+
+
+                });
+            });
+        }).catch(() => {
+            drawTwitchMessage(ctx, cheerConfig.message.message_box as IRect, cheerConfig.message.emote_size, cheer).then( () => {
+
+                msgValues.image = canvas.toDataURL().split(',')[1];
+
+                _websocket.send(JSON.stringify(msgValues));
+            });
         });
     }
 }

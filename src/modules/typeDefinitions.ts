@@ -33,6 +33,22 @@ export interface IMessage {
     "messageContent": string
 }
 
+export interface ICheer {
+    badges: Partial<Badges>,
+    color: string,
+    displayName: string,
+    "emotes": IEmote[],
+    "flags": string,
+    "mod": boolean,
+    "subscriber": boolean,
+    "tmiSentTs": string,
+    "userType": string,
+    "username": string,
+    "event": string,
+    "messageContent": string,
+    "bits": number
+}
+
 export interface IRawMessage {
     "_raw": string,
     "timestamp": string,
