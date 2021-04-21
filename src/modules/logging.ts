@@ -2,7 +2,7 @@ import {
     Message,
     Messages,
     PrivateMessage, PrivateMessageWithBits,
-    ResubscriptionParameters,
+    ResubscriptionParameters, UserNoticeRaidMessage,
     UserNoticeResubscriptionMessage, UserNoticeSubscriptionGiftMessage
 } from "twitch-js/lib";
 
@@ -55,6 +55,9 @@ export function push(message: any, profileImageUrl: string = undefined): void {
             break;
         case 'CHEER':
             msg = formatCheer(message, profileImageUrl);
+            break;
+        case 'RAID':
+            msg = formatRaid(message);
             break;
         default:
             return;
@@ -154,6 +157,8 @@ export function formatReSub(reSub: UserNoticeResubscriptionMessage) {
             "subPlan": utils.getParameterValue(reSub, 'subPlan'),
             "wasGifted": utils.getParameterValue(reSub, 'wasGifted')
         },
+        "messageContent": reSub.systemMessage,
+        "emotes": reSub.tags.emotes,
         "tmiSentTs": utils.getTagValue(reSub, 'tmiSentTs'),
         "event": reSub.event,
         "msgId": utils.getTagValue(reSub, 'msgId')
@@ -178,6 +183,26 @@ export function formatCheer(cheer: PrivateMessageWithBits, profileImageUrl: stri
         "profileImageUrl": profileImageUrl,
         "msgId": cheer.tags.msgId,
         "bits": cheer.bits
+    };
+}
+
+export function formatRaid(raid: UserNoticeRaidMessage) {
+    return {
+        "color": utils.getTagValue(raid, 'color'),
+        "userInfo": {
+            "username": raid.username,
+            "displayName": utils.getTagValue(raid, 'displayName'),
+            "userId": utils.getTagValue(raid, 'userId'),
+            "badges": utils.getTagValue(raid, 'badges')
+        },
+        "raidInfo": {
+            "viewerCount": utils.getParameterValue(raid, 'viewerCount')
+        },
+        "messageContent": raid.systemMessage,
+        "emotes": raid.tags.emotes,
+        "tmiSentTs": utils.getTagValue(raid, 'tmiSentTs'),
+        "event": raid.event,
+        "msgId": utils.getTagValue(raid, 'msgId')
     };
 }
 

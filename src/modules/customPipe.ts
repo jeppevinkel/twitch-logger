@@ -71,13 +71,16 @@ export function push(message, profileImageUrl: string = undefined) {
             pushFollow(message);
             break;
         case 'SUBSCRIPTION_GIFT':
-            pushGiftSub(message);
+            pushGiftSub(message, profileImageUrl);
             break;
         case 'RESUBSCRIPTION':
-            pushReSub(message);
+            pushReSub(message, profileImageUrl);
             break;
         case 'CHEER':
             pushCheer(message, profileImageUrl);
+            break;
+        case 'RAID':
+            pushRaid(message, profileImageUrl);
             break;
         default:
             break;
@@ -195,7 +198,7 @@ async function pushFollow(follow) {
     _websocket.send(JSON.stringify(msgValues));
 }
 
-async function pushGiftSub(giftSub) {
+async function pushGiftSub(giftSub, profileImageUrl: string = undefined) {
     // var skip = false;
     // if (_config.muteBroadcaster && giftSub.tags.badges.hasOwnProperty('broadcaster')) skip = true;
     // _config.ignoreUsers.forEach(function (user) { if (giftSub.tags.username.toLowerCase() == user.toLowerCase()) skip = true; });
@@ -270,7 +273,7 @@ async function pushGiftSub(giftSub) {
         console.log(`Skipped message from: ${giftSub.tags.displayName}`);
     } else {
         avatar.generate(giftSub.tags.displayName, giftSub.tags.color, giftSub.username).then(data => {
-            utils.loadImage(giftSub.profileImageUrl, `${giftSub.tags.userId}.png`, "avatar", data).then(img => {
+            utils.loadImage(profileImageUrl, `${giftSub.tags.userId}.png`, "avatar", data).then(img => {
                 _websocket.send(JSON.stringify({ title: "Twitch-Logger", message: `${utils.getTagValue(giftSub, 'systemMsg')}`, image: img}));
             });
         }).catch(() => {
@@ -279,14 +282,14 @@ async function pushGiftSub(giftSub) {
     }
 }
 
-function pushReSub(reSub) {
+function pushReSub(reSub, profileImageUrl: string = undefined) {
     var skip = false;
     if (_config.muteBroadcaster && reSub.tags.badges.hasOwnProperty('broadcaster')) skip = true;
     if (skip) {
         console.log(`Skipped message from: ${utils.getTagValue(reSub, 'displayName')}`);
     } else {
         avatar.generate(utils.getTagValue(reSub, 'displayName'), utils.getTagValue(reSub, 'color'), reSub.username).then(data => {
-            utils.loadImage(reSub.profileImageUrl, `${utils.getTagValue(reSub, 'userId')}.png`, "avatar", data).then(img => {
+            utils.loadImage(profileImageUrl, `${utils.getTagValue(reSub, 'userId')}.png`, "avatar", data).then(img => {
                 _websocket.send(JSON.stringify({ title: "Twitch-Logger", message: `${utils.getTagValue(reSub, 'systemMsg')}`, image: img}));
             });
         }).catch(() => {
@@ -369,6 +372,22 @@ async function pushCheer(cheer, profileImageUrl: string = undefined) {
 
                 _websocket.send(JSON.stringify(msgValues));
             });
+        });
+    }
+}
+
+function pushRaid(raid, profileImageUrl: string = undefined) {
+    var skip = false;
+    if (_config.muteBroadcaster && raid.tags.badges.hasOwnProperty('broadcaster')) skip = true;
+    if (skip) {
+        console.log(`Skipped message from: ${utils.getTagValue(raid, 'displayName')}`);
+    } else {
+        avatar.generate(utils.getTagValue(raid, 'displayName'), utils.getTagValue(raid, 'color'), raid.username).then(data => {
+            utils.loadImage(profileImageUrl, `${utils.getTagValue(raid, 'userId')}.png`, "avatar", data).then(img => {
+                _websocket.send(JSON.stringify({ title: "Twitch-Logger", message: `${raid.systemMessage}`, image: img}));
+            });
+        }).catch(() => {
+            _websocket.send(JSON.stringify({ title: "Twitch-Logger", message: `${raid.systemMessage}` }));
         });
     }
 }

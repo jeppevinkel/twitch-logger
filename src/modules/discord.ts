@@ -55,6 +55,9 @@ export function push(message) {
         case 'CHEER':
             str = formatCheer(message);
             break;
+        case 'RAID':
+            str = formatRaid(message);
+            break;
         default:
             break;
     }
@@ -135,4 +138,14 @@ function formatCheer(cheer) {
     let message = `${meta} ${subBadge}${modBadge}${broadcasterBadge} ${displayName}: ${cheer.message}`;
 
     return `${cheerAnnouncement}\n${message}`;
+}
+
+function formatRaid(raid) {
+    let dt = moment(parseInt(raid.tags['tmiSentTs']));
+    let meta = `[${raid.channel}][${dt.format('HH:mm')}]`;
+
+    // Message
+    let systemMessage = utils.getTagValue(raid, 'systemMsg');
+
+    return `${meta} ***${systemMessage}***`;
 }

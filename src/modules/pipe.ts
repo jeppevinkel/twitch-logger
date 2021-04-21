@@ -64,6 +64,12 @@ export function push(message) {
         case 'RESUBSCRIPTION':
             pushReSub(message);
             break;
+        case 'CHEER':
+            pushCheer(message);
+            break;
+        case 'RAID':
+            pushRaid(message);
+            break;
         default:
             break;
     }
@@ -126,6 +132,38 @@ function pushReSub(reSub) {
             });
         }).catch(() => {
             _websocket.send(JSON.stringify({ title: "Twitch-Logger", message: `${utils.getTagValue(reSub, 'systemMsg')}` }));
+        });
+    }
+}
+
+function pushCheer(cheer) {
+    var skip = false;
+    if (_config.muteBroadcaster && cheer.tags.badges.hasOwnProperty('broadcaster')) skip = true;
+    if (skip) {
+        console.log(`Skipped message from: ${utils.getTagValue(cheer, 'displayName')}`);
+    } else {
+        avatar.generate(utils.getTagValue(cheer, 'displayName'), utils.getTagValue(cheer, 'color'), cheer.username).then(data => {
+            utils.loadImage(cheer.profileImageUrl, `${utils.getTagValue(cheer, 'userId')}.png`, "avatar", data).then(img => {
+                _websocket.send(JSON.stringify({ title: "Twitch-Logger", message: `${cheer.message}`, image: img}));
+            });
+        }).catch(() => {
+            _websocket.send(JSON.stringify({ title: "Twitch-Logger", message: `${cheer.message}` }));
+        });
+    }
+}
+
+function pushRaid(raid) {
+    var skip = false;
+    if (_config.muteBroadcaster && raid.tags.badges.hasOwnProperty('broadcaster')) skip = true;
+    if (skip) {
+        console.log(`Skipped message from: ${utils.getTagValue(raid, 'displayName')}`);
+    } else {
+        avatar.generate(utils.getTagValue(raid, 'displayName'), utils.getTagValue(raid, 'color'), raid.username).then(data => {
+            utils.loadImage(raid.profileImageUrl, `${utils.getTagValue(raid, 'userId')}.png`, "avatar", data).then(img => {
+                _websocket.send(JSON.stringify({ title: "Twitch-Logger", message: `${raid.systemMessage}`, image: img}));
+            });
+        }).catch(() => {
+            _websocket.send(JSON.stringify({ title: "Twitch-Logger", message: `${raid.systemMessage}` }));
         });
     }
 }
