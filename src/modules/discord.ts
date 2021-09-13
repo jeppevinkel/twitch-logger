@@ -83,7 +83,9 @@ function formatMessage(message) {
     let displayName = utils.getTagValue(message, 'displayName');
     if(isBroadcaster) displayName = `**${displayName}**`; // Bold broadcaster
 
-    return `${meta} ${subBadge}${modBadge}${broadcasterBadge} ${displayName}: ${message.message}`;
+    let sanitizedMessage: string = message.message.replace(/@/gi, "(at)")
+
+    return `${meta} ${subBadge}${modBadge}${broadcasterBadge} ${displayName}: ${sanitizedMessage}`;
 }
 
 function formatFollow(follow) {

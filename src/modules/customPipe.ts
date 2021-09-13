@@ -135,7 +135,7 @@ async function pushMessage(message, profileImageUrl: string = undefined) {
                         ctx.save();
                         ctx.fillStyle = privateMessageConfig.message.name_display.fill_style;
                         ctx.font = privateMessageConfig.message.name_display.font;
-                        ctx.fillText(formattedMessage.displayName, privateMessageConfig.message.name_display.x, privateMessageConfig.message.name_display.y);
+                        ctx.fillText(formattedMessage.displayName+` [${message.channel}]`, privateMessageConfig.message.name_display.x, privateMessageConfig.message.name_display.y);
                         ctx.restore();
 
                         msgValues.image = canvas.toDataURL().split(',')[1];
